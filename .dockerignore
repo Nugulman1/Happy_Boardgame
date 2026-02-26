@@ -1,0 +1,32 @@
+# Docker 빌드 시 컨텍스트에서 제외할 파일/폴더
+# 제외하면 빌드 속도 향상, 이미지 크기 감소, 불필요한 파일 유입 방지
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# Git / IDE
+.git/
+.gitignore
+.cursor/
+
+# 환경/설정 (비밀 포함 가능)
+.env
+.env.*
+*.local
+
+# 문서/기타 (이미지에 넣을 필요 없음)
+docs/
+*.md
+!README.md
+
+# Docker 관련 (이미지 안에 넣지 않음, 빌드 컨텍스트만 사용)
+Dockerfile*
+docker-compose*
+.dockerignore

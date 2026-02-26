@@ -1,0 +1,11 @@
+# FastAPI: 웹 API 프레임워크 (라우팅, 요청/응답 처리)
+fastapi>=0.109.0
+
+# uvicorn: ASGI 서버. FastAPI 앱을 실제로 HTTP로 서빙함. [standard]는 자동 재시작 등 개발용 옵션 포함
+uvicorn[standard]>=0.27.0
+
+# 추후 DB 사용 시 사용. 지금은 Docker/환경 구성만 위해 명시
+# SQLAlchemy: Python에서 PostgreSQL 등 DB를 쓰기 위한 ORM
+# sqlalchemy>=2.0.0
+# psycopg2-binary: PostgreSQL 드라이버 (바이너리 배포로 설치 간단)
+# psycopg2-binary>=2.9.9

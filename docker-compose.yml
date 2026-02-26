@@ -1,0 +1,47 @@
+# ============================================================
+# 로컬에서 app + db 를 한 번에 띄우기 위한 Compose 설정
+# 사용: docker-compose up --build
+# ============================================================
+
+services:
+  # PostgreSQL DB. 앱에서 규칙/게임 상태 등을 저장할 때 사용 (추후)
+  db:
+    image: postgres:16-alpine
+    container_name: boardgame-db
+    environment:
+      # DB 초기 생성 시 사용할 사용자명/비밀번호/DB 이름. 앱의 DATABASE_URL 과 맞춰야 함
+      POSTGRES_USER: boardgame
+      POSTGRES_PASSWORD: boardgame_dev
+      POSTGRES_DB: boardgame
+    volumes:
+      # 데이터를 호스트에 남겨서 컨테이너를 지워도 DB 내용 유지
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # 호스트 5432 → 컨테이너 5432. 로컬에서 DBeaver 등으로 접속 가능
+      - "5432:5432"
+    healthcheck:
+      # db가 준비된 뒤 app을 띄우기 위해 사용 (depends_on + condition 에서 참조)
+      test: ["CMD-SHELL", "pg_isready -U boardgame -d boardgame"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+  # Python API 서버 (이 프로젝트 Dockerfile로 빌드)
+  app:
+    build: .
+    container_name: boardgame-app
+    ports:
+      # 호스트 8000 → 컨테이너 8000. 브라우저에서 http://localhost:8000
+      - "8000:8000"
+    environment:
+      # 앱이 DB에 접속할 때 쓰는 URL. db 서비스 이름이 호스트명이 됨 (Docker 내부 DNS)
+      DATABASE_URL: postgresql://boardgame:boardgame_dev@db:5432/boardgame
+    depends_on:
+      db:
+        condition: service_healthy
+    # 개발 시: 로컬 app/ 폴더를 컨테이너 /app/app 에 덮어씌움 → 코드 수정 시 재빌드 없이 반영 가능 (uvicorn --reload 사용 시)
+    volumes:
+      - ./app:/app/app
+
+volumes:
+  pgdata:
