@@ -1,0 +1,5 @@
+
+wsl
+cd ~/dev/Happy_Boardgame
+
+docker-compose up --build
