@@ -2,6 +2,7 @@
 티츄 게임 로직. 1단계: 카드·덱·상태 정의. 2단계: 준비 단계.
 """
 from tichu.cards import Card, make_deck, shuffle_deck, card_points
+from tichu.combo_info import ComboInfo, evaluate_combo, can_beat
 from tichu.state import GameState, RoundState, init_state, new_round_state, team_id
 from tichu.prepare import (
     sort_hand,
@@ -18,6 +19,9 @@ __all__ = [
     "make_deck",
     "shuffle_deck",
     "card_points",
+    "ComboInfo",
+    "evaluate_combo",
+    "can_beat",
     "GameState",
     "RoundState",
     "init_state",

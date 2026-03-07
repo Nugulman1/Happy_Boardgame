@@ -36,6 +36,7 @@ def main():
     r = new_round_state()
     assert len(r.hands) == 4 and r.leader_index == 0 and r.trick_index == 0
     assert r.grand_tichu_declarers == set()
+    assert r.current_trick_cards == []
     print("RoundState, new_round_state OK")
 
     print("team_id(0)=1, team_id(1)=2:", team_id(0), team_id(1))
