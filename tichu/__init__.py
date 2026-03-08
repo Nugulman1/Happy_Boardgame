@@ -13,6 +13,17 @@ from tichu.prepare import (
     run_prepare_phase,
 )
 from tichu.game_loop import is_game_over, run_game
+from tichu.mahjong_call import (
+    can_declare_mahjong_call,
+    set_mahjong_call,
+    clear_mahjong_call,
+    hand_can_possibly_match_mahjong_call,
+    find_legal_plays,
+    find_legal_plays_matching_call,
+    selection_satisfies_mahjong_call,
+    must_follow_mahjong_call,
+    can_pass_with_mahjong_call,
+)
 
 __all__ = [
     "Card",
@@ -35,4 +46,13 @@ __all__ = [
     "run_prepare_phase",
     "is_game_over",
     "run_game",
+    "can_declare_mahjong_call",
+    "set_mahjong_call",
+    "clear_mahjong_call",
+    "hand_can_possibly_match_mahjong_call",
+    "find_legal_plays",
+    "find_legal_plays_matching_call",
+    "selection_satisfies_mahjong_call",
+    "must_follow_mahjong_call",
+    "can_pass_with_mahjong_call",
 ]

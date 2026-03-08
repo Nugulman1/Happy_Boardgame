@@ -34,11 +34,12 @@ class RoundState:
     trick_index: int = 0
     grand_tichu_declarers: Set[int] = field(default_factory=set)
     current_trick_cards: List["Card"] = field(default_factory=list)
+    mahjong_call_rank: int | None = None
 
 
 def new_round_state() -> "RoundState":
     """
-    라운드 시작 시 호출. 빈 손패·빈 덱·선 0·트릭 0·라지 티츄 빈 집합·현재 트릭 카드 없음.
+    라운드 시작 시 호출. 빈 손패·빈 덱·선 0·트릭 0·라지 티츄 빈 집합·현재 트릭 카드 없음·참새 콜 없음.
     입력: 없음. 출력: RoundState. 전제조건: 없음. 수정하는 상태: 없음.
     """
     return RoundState(
@@ -48,6 +49,7 @@ def new_round_state() -> "RoundState":
         trick_index=0,
         grand_tichu_declarers=set(),
         current_trick_cards=[],
+        mahjong_call_rank=None,
     )
 
 
