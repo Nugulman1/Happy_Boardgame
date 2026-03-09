@@ -7,6 +7,7 @@ from typing import List, Set, Tuple
 
 from .cards import Card, make_deck
 from .state import RoundState
+from .trick import start_trick
 
 
 def sort_hand(hand: List[Card]) -> None:
@@ -89,3 +90,4 @@ def run_prepare_phase(round_state: RoundState) -> None:
     deal_remaining_6(round_state)
     # 교환: 프론트에서 choices 받으면 apply_exchange(round_state, choices) 호출 후 다음으로
     set_leader_by_mahjong(round_state)
+    start_trick(round_state)

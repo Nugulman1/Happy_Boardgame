@@ -48,8 +48,7 @@ def _rank_counts(cards: list["Card"]) -> Counter[int]:
 def _contains_unsupported_special(cards: list["Card"]) -> bool:
     """이번 단계에서 제외한 특수 카드가 포함되어 있는지 확인."""
 
-    ranks = {card.rank for card in cards}
-    return RANK_DOG in ranks
+    return False
 
 
 def _split_phoenix(cards: list["Card"]) -> tuple[list["Card"], bool]:
@@ -509,6 +508,11 @@ def _evaluate_combo_without_phoenix(ordered_cards: list["Card"]) -> ComboInfo | 
             return ComboInfo(card_count=1, combo_type="single", strength=(RANK_DRAGON,))
         return None
 
+    if RANK_DOG in ranks:
+        if card_count == 1:
+            return ComboInfo(card_count=1, combo_type="dog", strength=())
+        return None
+
     if card_count == 1:
         return ComboInfo(
             card_count=1,
@@ -546,11 +550,11 @@ def evaluate_combo(cards: list["Card"]) -> ComboInfo | None:
     - 포카드 폭탄, 스트레이트 플러시 폭탄
     - 참새(1) 포함
     - 용 싱글
+    - 개
     - 봉황 싱글/페어/트리플/풀하우스/스트레이트
 
     제외:
     - 봉황 연속페어
-    - 개
     """
 
     if not cards:
@@ -573,6 +577,9 @@ def can_beat(current_combo: ComboInfo, selected_combo: ComboInfo) -> bool:
     """
 
     if current_combo.strength is None or selected_combo.strength is None:
+        return False
+
+    if current_combo.combo_type == "dog" or selected_combo.combo_type == "dog":
         return False
 
     current_is_bomb = current_combo.combo_type in ("bomb_four", "bomb_straight_flush")

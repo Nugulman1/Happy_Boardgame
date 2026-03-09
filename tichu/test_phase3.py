@@ -26,6 +26,7 @@ def assert_invalid(cards):
 def main():
     assert_combo([Card("S", 7)], "single", (7,), 1)
     assert_combo([Card("", 1)], "single", (1,), 1)
+    assert_combo([Card("", 20)], "dog", (), 1)
     assert_combo([Card("", 22)], "single", (22,), 1)
     assert_combo([Card("S", 9), Card("H", 9)], "pair", (9,), 2)
     assert_combo([Card("S", 11), Card("H", 11), Card("D", 11)], "triple", (11,), 3)
@@ -263,6 +264,10 @@ def main():
     assert can_beat(ten_single, phoenix_single)
     assert phoenix_single.strength == (0.5,)
     assert not can_beat(dragon_single, phoenix_single)
+    dog_single = evaluate_combo([Card("", 20)])
+    assert dog_single is not None
+    assert not can_beat(ten_single, dog_single)
+    assert not can_beat(dog_single, ten_single)
     print("can_beat 봉황 비교 OK")
 
     print("3단계 족보 판정/비교 검증 통과.")

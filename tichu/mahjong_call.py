@@ -52,15 +52,12 @@ def set_mahjong_call(
     round_state: RoundState,
     played_cards: list[Card],
     call_rank: int | None,
-    player_index: int | None = None,
 ) -> None:
     """
     유효한 참새 콜을 라운드 상태에 저장.
     입력: round_state(수정 대상), 방금 낸 카드, 콜 숫자. 출력: 없음.
     전제조건: played_cards는 실제 낸 카드. 수정하는 상태: round_state.mahjong_call_rank.
     """
-
-    del player_index
 
     if not can_declare_mahjong_call(played_cards, call_rank):
         raise ValueError("invalid mahjong call")
@@ -175,9 +172,6 @@ def must_follow_mahjong_call(
     입력: hand, 현재 트릭 카드 목록, call_rank. 출력: bool.
     전제조건: 없음. 수정하는 상태: 없음.
     """
-
-    if not hand_can_possibly_match_mahjong_call(hand, call_rank):
-        return False
 
     return bool(find_legal_plays_matching_call(hand, current_trick_cards, call_rank))
 

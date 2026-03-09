@@ -12,7 +12,7 @@ from tichu.prepare import (
     set_leader_by_mahjong,
     run_prepare_phase,
 )
-from tichu.game_loop import is_game_over, run_game
+from tichu.game_loop import is_game_over, run_game, finalize_round
 from tichu.mahjong_call import (
     can_declare_mahjong_call,
     set_mahjong_call,
@@ -23,6 +23,21 @@ from tichu.mahjong_call import (
     selection_satisfies_mahjong_call,
     must_follow_mahjong_call,
     can_pass_with_mahjong_call,
+)
+from tichu.scoring import calculate_round_score_deltas, apply_round_scores
+from tichu.trick import (
+    can_declare_small_tichu,
+    declare_small_tichu,
+    start_trick,
+    get_next_active_player,
+    get_legal_plays,
+    can_player_pass,
+    is_double_victory,
+    is_round_over,
+    get_round_end_reason,
+    play_cards,
+    pass_turn,
+    resolve_trick_end,
 )
 
 __all__ = [
@@ -46,6 +61,7 @@ __all__ = [
     "run_prepare_phase",
     "is_game_over",
     "run_game",
+    "finalize_round",
     "can_declare_mahjong_call",
     "set_mahjong_call",
     "clear_mahjong_call",
@@ -55,4 +71,18 @@ __all__ = [
     "selection_satisfies_mahjong_call",
     "must_follow_mahjong_call",
     "can_pass_with_mahjong_call",
+    "calculate_round_score_deltas",
+    "apply_round_scores",
+    "can_declare_small_tichu",
+    "declare_small_tichu",
+    "start_trick",
+    "get_next_active_player",
+    "get_legal_plays",
+    "can_player_pass",
+    "is_double_victory",
+    "is_round_over",
+    "get_round_end_reason",
+    "play_cards",
+    "pass_turn",
+    "resolve_trick_end",
 ]

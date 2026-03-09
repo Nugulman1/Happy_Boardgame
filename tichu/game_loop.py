@@ -1,8 +1,10 @@
 """
 메인 게임 루프. 한 게임 = while 하나. 공통 설계 §1.
 """
-from .state import GameState, init_state, new_round_state
+from .state import GameState, RoundState, init_state, new_round_state
 from .prepare import run_prepare_phase
+from .scoring import apply_round_scores
+from .trick import is_round_over
 
 
 def is_game_over(state: GameState) -> bool:
@@ -22,6 +24,21 @@ def run_game(state: GameState) -> None:
     while not is_game_over(state):
         round_state = new_round_state()
         run_prepare_phase(round_state)
-        # run_trick_phase(round_state, state)  # 3단계~
-        # apply_round_scores(state, round_state)
-        state.round_index += 1
+        # 외부가 round_state에 트릭 액션을 반영해 is_round_over(round_state)를 만족시킨 뒤
+        # finalize_round(state, round_state)를 호출하는 구조를 유지한다.
+        break
+
+
+def finalize_round(state: GameState, round_state: RoundState) -> list[int]:
+    """
+    종료된 라운드 점수를 누적하고 다음 라운드로 넘긴다.
+    입력: state(수정 대상), round_state. 출력: [1팀 변화량, 2팀 변화량].
+    수정하는 상태: state.team_scores, state.round_index.
+    """
+
+    if not is_round_over(round_state):
+        raise ValueError("round is not over")
+
+    deltas = apply_round_scores(state, round_state)
+    state.round_index += 1
+    return deltas
