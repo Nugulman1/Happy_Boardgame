@@ -4,6 +4,9 @@ fastapi>=0.109.0
 # uvicorn: ASGI 서버. FastAPI 앱을 실제로 HTTP로 서빙함. [standard]는 자동 재시작 등 개발용 옵션 포함
 uvicorn[standard]>=0.27.0
 
+# TestClient가 내부적으로 사용
+httpx>=0.27.0
+
 # 추후 DB 사용 시 사용. 지금은 Docker/환경 구성만 위해 명시
 # SQLAlchemy: Python에서 PostgreSQL 등 DB를 쓰기 위한 ORM
 # sqlalchemy>=2.0.0

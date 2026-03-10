@@ -42,6 +42,7 @@ services:
     # 개발 시: 로컬 app/ 폴더를 컨테이너 /app/app 에 덮어씌움 → 코드 수정 시 재빌드 없이 반영 가능 (uvicorn --reload 사용 시)
     volumes:
       - ./app:/app/app
+      - ./tichu:/app/tichu
 
 volumes:
   pgdata:

@@ -1,5 +1,16 @@
 {
   "files.encoding": "utf8",
   "files.autoGuessEncoding": false,
-  "terminal.integrated.defaultProfile.windows": "Ubuntu (WSL)"
+  "terminal.integrated.profiles.windows": {
+    "PowerShell 7": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell 7",
+  "terminal.integrated.profiles.linux": {
+    "PowerShell 7": {
+      "path": "pwsh"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "PowerShell 7"
 }

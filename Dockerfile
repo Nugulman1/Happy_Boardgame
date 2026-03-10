@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 앱 소스 복사. .dockerignore 에 의해 불필요한 파일은 제외됨
 COPY app/ ./app/
+COPY tichu/ ./tichu/
 
 # 컨테이너가 실행될 때 돌릴 명령.
 # uvicorn이 app/main.py 의 app 객체를 로드하고, 0.0.0.0으로 listen 해야 호스트에서 접속 가능
