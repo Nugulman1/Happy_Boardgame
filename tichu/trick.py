@@ -1,9 +1,10 @@
 """
 3단계: 트릭 코어 상태전이.
 
-- 현재 트릭의 최고 조합은 round_state.current_trick_cards 에 둔다.
+- 현재 트릭의 최고 조합 카드는 round_state.current_trick_cards 에 둔다.
+- 봉황 싱글처럼 카드만으로는 비교 강도가 복원되지 않는 경우를 위해
+  current_trick_combo에 비교용 해석 결과를 함께 보관한다.
 - 트릭 전체 회수 카드 더미는 round_state.current_trick_pile 에 별도로 모은다.
-- 폭탄 끼어들기와 개는 다음 단계에서 구현한다.
 """
 from typing import Iterable
 
@@ -15,7 +16,7 @@ from .mahjong_call import (
     selection_satisfies_mahjong_call,
     set_mahjong_call,
 )
-from .combo_info import can_beat, evaluate_combo
+from .combo_info import ComboInfo, can_beat, evaluate_combo
 from .state import RoundState, team_id
 
 
@@ -36,6 +37,7 @@ def _clear_trick_state(round_state: RoundState) -> None:
     """트릭 종료 후 현재 트릭 상태만 비운다."""
 
     round_state.current_trick_cards = []
+    round_state.current_trick_combo = None
     round_state.current_trick_pile = []
     round_state.last_played_by = None
     round_state.pass_count_since_last_play = 0
@@ -75,10 +77,27 @@ def _teammate_index(player_index: int) -> int:
 def _can_play_dog(round_state: RoundState, player_index: int) -> bool:
     """개를 낼 수 있는 조건인지 확인."""
 
-    return (
-        not round_state.current_trick_cards
-        and player_index not in round_state.played_first_card_players
-    )
+    return not round_state.current_trick_cards
+
+
+def _resolved_combo_for_table(
+    current_combo: ComboInfo | None,
+    selected_combo: ComboInfo,
+) -> ComboInfo:
+    """테이블 위에 저장할 실제 비교 강도를 가진 조합 정보를 반환."""
+
+    if (
+        current_combo is not None
+        and selected_combo.combo_type == "single"
+        and selected_combo.uses_phoenix
+    ):
+        return ComboInfo(
+            card_count=1,
+            combo_type="single",
+            strength=(current_combo.strength[0] + 0.5,),
+            uses_phoenix=True,
+        )
+    return selected_combo
 
 
 def _active_player_indices(round_state: RoundState) -> list[int]:
@@ -165,6 +184,7 @@ def get_legal_plays(round_state: RoundState, player_index: int) -> list[list[Car
         round_state.hands[player_index],
         round_state.current_trick_cards,
         round_state.mahjong_call_rank,
+        round_state.current_trick_combo,
     )
 
 
@@ -223,6 +243,7 @@ def can_player_pass(round_state: RoundState, player_index: int) -> bool:
         round_state.hands[player_index],
         round_state.current_trick_cards,
         round_state.mahjong_call_rank,
+        round_state.current_trick_combo,
     )
 
 
@@ -252,6 +273,10 @@ def play_cards(
         raise ValueError("selected cards are not a legal play")
 
     current_trick_cards = round_state.current_trick_cards
+    current_combo = round_state.current_trick_combo
+    if current_combo is None and current_trick_cards:
+        current_combo = evaluate_combo(current_trick_cards)
+
     if selected_combo.combo_type == "dog":
         if not _can_play_dog(round_state, player_index):
             raise ValueError("selected cards are not a legal play")
@@ -267,7 +292,6 @@ def play_cards(
         return
 
     if current_trick_cards:
-        current_combo = evaluate_combo(current_trick_cards)
         if current_combo is None or not can_beat(current_combo, selected_combo):
             raise ValueError("selected cards are not a legal play")
 
@@ -278,6 +302,7 @@ def play_cards(
             round_state.hands[player_index],
             current_trick_cards,
             call_rank_in_state,
+            current_combo,
         )
         and not selection_satisfies_mahjong_call(ordered_selected_cards, call_rank_in_state)
     ):
@@ -295,6 +320,7 @@ def play_cards(
 
     round_state.played_first_card_players.add(player_index)
     round_state.current_trick_cards = ordered_selected_cards
+    round_state.current_trick_combo = _resolved_combo_for_table(current_combo, selected_combo)
     round_state.current_trick_pile.extend(ordered_selected_cards)
     round_state.last_played_by = player_index
     round_state.pass_count_since_last_play = 0

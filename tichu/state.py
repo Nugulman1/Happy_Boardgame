@@ -8,6 +8,7 @@ from typing import List, Set, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .cards import Card
+    from .combo_info import ComboInfo
 
 
 class GameState:
@@ -35,6 +36,7 @@ class RoundState:
     trick_index: int = 0
     grand_tichu_declarers: Set[int] = field(default_factory=set)
     current_trick_cards: List["Card"] = field(default_factory=list)
+    current_trick_combo: "ComboInfo | None" = None
     current_trick_pile: List["Card"] = field(default_factory=list)
     last_played_by: int | None = None
     pass_count_since_last_play: int = 0
@@ -58,6 +60,7 @@ def new_round_state() -> "RoundState":
         trick_index=0,
         grand_tichu_declarers=set(),
         current_trick_cards=[],
+        current_trick_combo=None,
         current_trick_pile=[],
         last_played_by=None,
         pass_count_since_last_play=0,

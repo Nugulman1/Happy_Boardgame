@@ -83,6 +83,7 @@ def main():
     play_cards(round_state, 0, [Card("", 20)])
     assert round_state.hands[0] == [Card("S", 7)]
     assert round_state.current_trick_cards == []
+    assert round_state.current_trick_combo is None
     assert round_state.current_trick_pile == []
     assert round_state.leader_index == 2
     assert round_state.current_player_index == 2
@@ -111,11 +112,33 @@ def main():
         [Card("S", 11)],
     ]
     round_state.played_first_card_players.add(0)
-    assert_raises_value_error(
-        lambda: play_cards(round_state, 0, [Card("", 20)]),
-        "dog cannot be played after first turn",
-    )
+    round_state.leader_index = 0
+    play_cards(round_state, 0, [Card("", 20)])
+    assert round_state.leader_index == 2
+    assert round_state.current_player_index == 2
     print("dog flow OK")
+
+    round_state = new_round_state()
+    round_state.current_player_index = 0
+    round_state.hands = [
+        [Card("S", 10)],
+        [Card("", 21)],
+        [Card("S", 2), Card("S", 11)],
+        [Card("S", 12)],
+    ]
+    play_cards(round_state, 0, [Card("S", 10)])
+    play_cards(round_state, 1, [Card("", 21)])
+    assert round_state.current_trick_combo is not None
+    assert round_state.current_trick_combo.strength == (10.5,)
+    assert_raises_value_error(
+        lambda: play_cards(round_state, 2, [Card("S", 2)]),
+        "phoenix single should stay above previous single",
+    )
+    play_cards(round_state, 2, [Card("S", 11)])
+    assert round_state.current_trick_cards == [Card("S", 11)]
+    assert round_state.current_trick_combo is not None
+    assert round_state.current_trick_combo.strength == (11,)
+    print("phoenix single persistence OK")
 
     round_state = new_round_state()
     round_state.current_player_index = 0

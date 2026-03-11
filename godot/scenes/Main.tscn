@@ -1,0 +1,219 @@
+[gd_scene format=3 uid="uid://c5q0j5eb0j5sl"]
+
+[ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_title"]
+font_size = 24
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="RootLayout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="RootLayout"]
+layout_mode = 2
+text = "Happy Boardgame"
+label_settings = SubResource("LabelSettings_title")
+
+[node name="StatusLabel" type="Label" parent="RootLayout"]
+layout_mode = 2
+text = "Server: checking..."
+
+[node name="PhaseLabel" type="Label" parent="RootLayout"]
+layout_mode = 2
+text = "Phase: -"
+
+[node name="TurnLabel" type="Label" parent="RootLayout"]
+layout_mode = 2
+text = "Turn: -"
+
+[node name="GameInfoLabel" type="Label" parent="RootLayout"]
+layout_mode = 2
+text = "Scores: - | Round: -"
+
+[node name="ErrorLabel" type="Label" parent="RootLayout"]
+layout_mode = 2
+text = ""
+modulate = Color(0.85, 0.2, 0.2, 1)
+autowrap_mode = 3
+
+[node name="ControlRow" type="HBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ViewerLabel" type="Label" parent="RootLayout/ControlRow"]
+layout_mode = 2
+text = "Viewer"
+
+[node name="ViewerSelect" type="OptionButton" parent="RootLayout/ControlRow"]
+layout_mode = 2
+
+[node name="ActorLabel" type="Label" parent="RootLayout/ControlRow"]
+layout_mode = 2
+text = "Actor"
+
+[node name="ActorSelect" type="OptionButton" parent="RootLayout/ControlRow"]
+layout_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CreateGameButton" type="Button" parent="RootLayout/ButtonRow"]
+layout_mode = 2
+text = "Create Game"
+
+[node name="RefreshButton" type="Button" parent="RootLayout/ButtonRow"]
+layout_mode = 2
+text = "Refresh"
+disabled = true
+
+[node name="PassButton" type="Button" parent="RootLayout/ButtonRow"]
+layout_mode = 2
+text = "Pass"
+disabled = true
+
+[node name="PlayButton" type="Button" parent="RootLayout/ButtonRow"]
+layout_mode = 2
+text = "Play"
+disabled = true
+
+[node name="SmallTichuButton" type="Button" parent="RootLayout/ButtonRow"]
+layout_mode = 2
+text = "Small Tichu"
+disabled = true
+
+[node name="PrepareRow" type="HBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GrandTichuYesButton" type="Button" parent="RootLayout/PrepareRow"]
+layout_mode = 2
+text = "Grand Tichu Yes"
+disabled = true
+
+[node name="GrandTichuNoButton" type="Button" parent="RootLayout/PrepareRow"]
+layout_mode = 2
+text = "Grand Tichu No"
+disabled = true
+
+[node name="ExchangeSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ExchangeTitleLabel" type="Label" parent="RootLayout/ExchangeSection"]
+layout_mode = 2
+text = "Exchange Selection"
+
+[node name="ExchangeSelectionRow" type="HBoxContainer" parent="RootLayout/ExchangeSection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SelectedLeftLabel" type="Label" parent="RootLayout/ExchangeSection/ExchangeSelectionRow"]
+layout_mode = 2
+text = "Left: -"
+
+[node name="SelectedTeamLabel" type="Label" parent="RootLayout/ExchangeSection/ExchangeSelectionRow"]
+layout_mode = 2
+text = "Team: -"
+
+[node name="SelectedRightLabel" type="Label" parent="RootLayout/ExchangeSection/ExchangeSelectionRow"]
+layout_mode = 2
+text = "Right: -"
+
+[node name="ExchangeButtonRow" type="HBoxContainer" parent="RootLayout/ExchangeSection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SubmitExchangeButton" type="Button" parent="RootLayout/ExchangeSection/ExchangeButtonRow"]
+layout_mode = 2
+text = "Submit Exchange"
+disabled = true
+
+[node name="ClearExchangeButton" type="Button" parent="RootLayout/ExchangeSection/ExchangeButtonRow"]
+layout_mode = 2
+text = "Clear Exchange"
+disabled = true
+
+[node name="PlaySection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayTitleLabel" type="Label" parent="RootLayout/PlaySection"]
+layout_mode = 2
+text = "Play Selection"
+
+[node name="SelectedPlayLabel" type="Label" parent="RootLayout/PlaySection"]
+layout_mode = 2
+text = "Selected: -"
+
+[node name="PlaySelectionButtonRow" type="HBoxContainer" parent="RootLayout/PlaySection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ClearPlaySelectionButton" type="Button" parent="RootLayout/PlaySection/PlaySelectionButtonRow"]
+layout_mode = 2
+text = "Clear Play Selection"
+disabled = true
+
+[node name="DragonSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DragonPromptLabel" type="Label" parent="RootLayout/DragonSection"]
+layout_mode = 2
+text = "Dragon Recipient: -"
+
+[node name="DragonRecipientContainer" type="HBoxContainer" parent="RootLayout/DragonSection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ResultSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RoundResultLabel" type="Label" parent="RootLayout/ResultSection"]
+layout_mode = 2
+text = "Round Result: -"
+autowrap_mode = 3
+
+[node name="HandSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HandTitleLabel" type="Label" parent="RootLayout/HandSection"]
+layout_mode = 2
+text = "Viewer Hand"
+
+[node name="HandContainer" type="HBoxContainer" parent="RootLayout/HandSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TableSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TableTitleLabel" type="Label" parent="RootLayout/TableSection"]
+layout_mode = 2
+text = "Table Cards"
+
+[node name="TableContainer" type="HBoxContainer" parent="RootLayout/TableSection"]
+layout_mode = 2
+theme_override_constants/separation = 8

@@ -1,0 +1,10 @@
+# Godot editor binaries kept locally for development only.
+/godot/Godot_v*.x86_64
+/godot/Godot_v*.exe
+/godot/*.Zone.Identifier
+/godot/*:Zone.Identifier
+/godot/.godot/
+
+# Python build artifacts
+__pycache__/
+*.pyc

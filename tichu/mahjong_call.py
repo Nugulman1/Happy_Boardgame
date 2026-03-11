@@ -12,7 +12,7 @@ from itertools import combinations
 from typing import Iterable
 
 from .cards import Card, RANK_MAHJONG, RANK_PHOENIX
-from .combo_info import evaluate_combo, can_beat
+from .combo_info import ComboInfo, evaluate_combo, can_beat
 from .state import RoundState
 
 
@@ -89,7 +89,11 @@ def hand_can_possibly_match_mahjong_call(hand: list[Card], call_rank: int | None
     return has_call_rank or has_phoenix
 
 
-def find_legal_plays(hand: list[Card], current_trick_cards: list[Card]) -> list[list[Card]]:
+def find_legal_plays(
+    hand: list[Card],
+    current_trick_cards: list[Card],
+    current_trick_combo: ComboInfo | None = None,
+) -> list[list[Card]]:
     """
     현재 손패에서 낼 수 있는 모든 합법 조합을 탐색.
     입력: hand, 현재 트릭 카드 목록. 출력: 합법 조합 목록.
@@ -98,8 +102,8 @@ def find_legal_plays(hand: list[Card], current_trick_cards: list[Card]) -> list[
 
     ordered_hand = _ordered_cards(hand)
 
-    current_combo = None
-    if current_trick_cards:
+    current_combo = current_trick_combo
+    if current_combo is None and current_trick_cards:
         current_combo = evaluate_combo(current_trick_cards)
         if current_combo is None:
             return []
@@ -144,6 +148,7 @@ def find_legal_plays_matching_call(
     hand: list[Card],
     current_trick_cards: list[Card],
     call_rank: int | None,
+    current_trick_combo: ComboInfo | None = None,
 ) -> list[list[Card]]:
     """
     현재 트릭 기준으로 참새 콜 숫자를 충족하는 합법 조합만 탐색.
@@ -154,7 +159,7 @@ def find_legal_plays_matching_call(
     if not hand_can_possibly_match_mahjong_call(hand, call_rank):
         return []
 
-    legal_plays = find_legal_plays(hand, current_trick_cards)
+    legal_plays = find_legal_plays(hand, current_trick_cards, current_trick_combo)
     return [
         selected_cards
         for selected_cards in legal_plays
@@ -166,6 +171,7 @@ def must_follow_mahjong_call(
     hand: list[Card],
     current_trick_cards: list[Card],
     call_rank: int | None,
+    current_trick_combo: ComboInfo | None = None,
 ) -> bool:
     """
     현재 손패와 트릭 상태에서 참새 콜을 반드시 따라야 하는지 검사.
@@ -173,13 +179,14 @@ def must_follow_mahjong_call(
     전제조건: 없음. 수정하는 상태: 없음.
     """
 
-    return bool(find_legal_plays_matching_call(hand, current_trick_cards, call_rank))
+    return bool(find_legal_plays_matching_call(hand, current_trick_cards, call_rank, current_trick_combo))
 
 
 def can_pass_with_mahjong_call(
     hand: list[Card],
     current_trick_cards: list[Card],
     call_rank: int | None,
+    current_trick_combo: ComboInfo | None = None,
 ) -> bool:
     """
     현재 참새 콜 규칙 아래에서 패스 가능한지 검사.
@@ -187,4 +194,4 @@ def can_pass_with_mahjong_call(
     전제조건: 없음. 수정하는 상태: 없음.
     """
 
-    return not must_follow_mahjong_call(hand, current_trick_cards, call_rank)
+    return not must_follow_mahjong_call(hand, current_trick_cards, call_rank, current_trick_combo)
