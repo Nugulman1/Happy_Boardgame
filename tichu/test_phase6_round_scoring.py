@@ -43,6 +43,16 @@ def main():
     print("small tichu declaration OK")
 
     round_state = new_round_state()
+    round_state.hands[1] = [Card("S", 10)]
+    round_state.grand_tichu_declarers = {1}
+    assert not can_declare_small_tichu(round_state, 1)
+    assert_raises_value_error(
+        lambda: declare_small_tichu(round_state, 1),
+        "cannot declare small tichu after declaring grand tichu",
+    )
+    print("grand tichu blocks small tichu OK")
+
+    round_state = new_round_state()
     round_state.small_tichu_declarers = {0}
     round_state.grand_tichu_declarers = {1}
     round_state.players_out_order = [0, 2]

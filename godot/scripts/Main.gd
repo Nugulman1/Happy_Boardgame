@@ -3,37 +3,50 @@ extends Control
 const ApiClientScript = preload("res://scripts/ApiClient.gd")
 const GameStoreScript = preload("res://scripts/GameStore.gd")
 
-@onready var status_label: Label = $"RootLayout/StatusLabel"
-@onready var phase_label: Label = $"RootLayout/PhaseLabel"
-@onready var turn_label: Label = $"RootLayout/TurnLabel"
-@onready var game_info_label: Label = $"RootLayout/GameInfoLabel"
-@onready var error_label: Label = $"RootLayout/ErrorLabel"
-@onready var viewer_select: OptionButton = $"RootLayout/ControlRow/ViewerSelect"
-@onready var actor_select: OptionButton = $"RootLayout/ControlRow/ActorSelect"
-@onready var create_game_button: Button = $"RootLayout/ButtonRow/CreateGameButton"
-@onready var refresh_button: Button = $"RootLayout/ButtonRow/RefreshButton"
-@onready var pass_button: Button = $"RootLayout/ButtonRow/PassButton"
-@onready var play_button: Button = $"RootLayout/ButtonRow/PlayButton"
-@onready var small_tichu_button: Button = $"RootLayout/ButtonRow/SmallTichuButton"
-@onready var grand_tichu_yes_button: Button = $"RootLayout/PrepareRow/GrandTichuYesButton"
-@onready var grand_tichu_no_button: Button = $"RootLayout/PrepareRow/GrandTichuNoButton"
-@onready var selected_left_label: Label = $"RootLayout/ExchangeSection/ExchangeSelectionRow/SelectedLeftLabel"
-@onready var selected_team_label: Label = $"RootLayout/ExchangeSection/ExchangeSelectionRow/SelectedTeamLabel"
-@onready var selected_right_label: Label = $"RootLayout/ExchangeSection/ExchangeSelectionRow/SelectedRightLabel"
-@onready var submit_exchange_button: Button = $"RootLayout/ExchangeSection/ExchangeButtonRow/SubmitExchangeButton"
-@onready var clear_exchange_button: Button = $"RootLayout/ExchangeSection/ExchangeButtonRow/ClearExchangeButton"
-@onready var selected_play_label: Label = $"RootLayout/PlaySection/SelectedPlayLabel"
-@onready var clear_play_selection_button: Button = $"RootLayout/PlaySection/PlaySelectionButtonRow/ClearPlaySelectionButton"
-@onready var dragon_prompt_label: Label = $"RootLayout/DragonSection/DragonPromptLabel"
-@onready var dragon_recipient_container: HBoxContainer = $"RootLayout/DragonSection/DragonRecipientContainer"
-@onready var round_result_label: Label = $"RootLayout/ResultSection/RoundResultLabel"
-@onready var hand_container: HBoxContainer = $"RootLayout/HandSection/HandContainer"
-@onready var table_container: HBoxContainer = $"RootLayout/TableSection/TableContainer"
+@onready var status_label: Label = $"RootLayout/HeaderSection/StatusRow/StatusLabel"
+@onready var phase_label: Label = $"RootLayout/HeaderSection/StatusRow/PhaseLabel"
+@onready var turn_label: Label = $"RootLayout/HeaderSection/StatusRow/TurnLabel"
+@onready var game_info_label: Label = $"RootLayout/HeaderSection/StatusRow/GameInfoLabel"
+@onready var error_label: Label = $"RootLayout/HeaderSection/ErrorLabel"
+@onready var viewer_select: OptionButton = $"RootLayout/ControlSection/ControlRow/ViewerSelect"
+@onready var actor_select: OptionButton = $"RootLayout/ControlSection/ControlRow/ActorSelect"
+@onready var create_game_button: Button = $"RootLayout/ControlSection/ButtonRow/CreateGameButton"
+@onready var refresh_button: Button = $"RootLayout/ControlSection/ButtonRow/RefreshButton"
+@onready var pass_button: Button = $"RootLayout/ControlSection/ButtonRow/PassButton"
+@onready var play_button: Button = $"RootLayout/ControlSection/ButtonRow/PlayButton"
+@onready var small_tichu_button: Button = $"RootLayout/ControlSection/ButtonRow/SmallTichuButton"
+@onready var grand_tichu_yes_button: Button = $"RootLayout/ControlSection/PrepareRow/GrandTichuYesButton"
+@onready var grand_tichu_no_button: Button = $"RootLayout/ControlSection/PrepareRow/GrandTichuNoButton"
+@onready var selected_left_label: Label = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow/SelectedLeftLabel"
+@onready var selected_team_label: Label = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow/SelectedTeamLabel"
+@onready var selected_right_label: Label = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow/SelectedRightLabel"
+@onready var submit_exchange_button: Button = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow/SubmitExchangeButton"
+@onready var clear_exchange_button: Button = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow/ClearExchangeButton"
+@onready var selected_play_label: Label = $"RootLayout/ContentRow/RightColumn/PlaySection/SelectedPlayLabel"
+@onready var current_call_label: Label = $"RootLayout/ContentRow/RightColumn/PlaySection/CurrentCallLabel"
+@onready var call_rank_select: OptionButton = $"RootLayout/ContentRow/RightColumn/PlaySection/CallRankRow/CallRankSelect"
+@onready var clear_play_selection_button: Button = $"RootLayout/ContentRow/RightColumn/PlaySection/PlaySelectionButtonRow/ClearPlaySelectionButton"
+@onready var dragon_prompt_label: Label = $"RootLayout/ContentRow/RightColumn/DragonSection/DragonPromptLabel"
+@onready var dragon_recipient_container: HBoxContainer = $"RootLayout/ContentRow/RightColumn/DragonSection/DragonRecipientContainer"
+@onready var round_result_label: Label = $"RootLayout/ContentRow/RightColumn/ResultSection/RoundResultLabel"
+@onready var players_summary_label: Label = $"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersSummaryLabel"
+@onready var players_out_order_label: Label = $"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersOutOrderLabel"
+@onready var effects_label: Label = $"RootLayout/EffectsSection/EffectsLabel"
+@onready var hand_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/HandSection/HandContainer"
+@onready var table_info_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableInfoLabel"
+@onready var table_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/TableSection/TableContainer"
 
 var api_client
 var game_store
 var pending_exchange_cards: Array = []
 var pending_play_cards: Array = []
+var legal_plays_loading := false
+var legal_plays_error := ""
+var play_preview_loading := false
+var play_preview_error := ""
+var play_preview_request_id := 0
+var selected_call_rank = null
+var recent_effect_lines: Array[String] = []
 
 
 func _ready() -> void:
@@ -51,6 +64,8 @@ func _ready() -> void:
 	api_client.play_submitted.connect(_on_play_submitted)
 	api_client.pass_submitted.connect(_on_pass_submitted)
 	api_client.dragon_recipient_submitted.connect(_on_dragon_recipient_submitted)
+	api_client.legal_plays_received.connect(_on_legal_plays_received)
+	api_client.play_preview_received.connect(_on_play_preview_received)
 
 	create_game_button.pressed.connect(_on_create_game_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
@@ -64,8 +79,10 @@ func _ready() -> void:
 	clear_play_selection_button.pressed.connect(_on_clear_play_selection_pressed)
 
 	_setup_player_selects()
+	_setup_call_rank_select()
 	viewer_select.item_selected.connect(_on_viewer_selected)
 	actor_select.item_selected.connect(_on_actor_selected)
+	call_rank_select.item_selected.connect(_on_call_rank_selected)
 
 	render_buttons({})
 	_reset_exchange_selection()
@@ -92,6 +109,7 @@ func _on_game_created(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "game creation failed"))
 		return
 
+	recent_effect_lines.clear()
 	game_store.apply_snapshot(payload)
 	game_store.set_selected_viewer(game_store.viewer)
 	game_store.set_selected_actor(game_store.viewer)
@@ -192,6 +210,9 @@ func _on_grand_tichu_pressed(declare: bool) -> void:
 	if not game_store.has_active_game():
 		show_error("Create a game before sending actions.")
 		return
+	if not game_store.available_actions.get("can_declare_grand_tichu", false):
+		show_error("Grand Tichu is not available right now.")
+		return
 
 	error_label.text = ""
 	api_client.submit_grand_tichu(game_store.game_id, game_store.selected_actor, declare)
@@ -231,12 +252,6 @@ func _on_small_tichu_pressed() -> void:
 	if not game_store.has_active_game():
 		show_error("Create a game before sending actions.")
 		return
-	if game_store.phase != "trick":
-		show_error("Small Tichu is only available during trick.")
-		return
-	if game_store.selected_actor != game_store.selected_viewer:
-		show_error("Set Viewer and Actor to the same player before declaring small tichu.")
-		return
 	if not game_store.available_actions.get("can_declare_small_tichu", false):
 		show_error("Small Tichu is not available right now.")
 		return
@@ -249,32 +264,34 @@ func _on_play_pressed() -> void:
 	if not game_store.has_active_game():
 		show_error("Create a game before sending actions.")
 		return
-	if game_store.phase != "trick":
-		show_error("Play is only available during trick.")
-		return
-	if game_store.selected_actor != game_store.selected_viewer:
-		show_error("Set Viewer and Actor to the same player before choosing play cards.")
-		return
-	if not _actor_is_current_turn():
-		show_error("Selected actor is not the current player.")
+	if not game_store.available_actions.get("can_play", false):
+		show_error("Play is not available right now.")
 		return
 	if pending_play_cards.is_empty():
 		show_error("Select at least one card to play.")
 		return
+	if play_preview_loading:
+		show_error("Play preview is still loading.")
+		return
+	if not game_store.play_preview.get("can_submit_play", false):
+		show_error(str(game_store.play_preview.get("message", "Selected cards cannot be played right now.")))
+		return
 
 	error_label.text = ""
-	api_client.submit_play(game_store.game_id, game_store.selected_actor, pending_play_cards)
+	api_client.submit_play(
+		game_store.game_id,
+		game_store.selected_actor,
+		pending_play_cards,
+		_selected_call_rank_payload()
+	)
 
 
 func _on_pass_pressed() -> void:
 	if not game_store.has_active_game():
 		show_error("Create a game before sending actions.")
 		return
-	if game_store.phase != "trick":
-		show_error("Pass is only available during trick.")
-		return
-	if not _actor_is_current_turn():
-		show_error("Selected actor is not the current player.")
+	if not game_store.available_actions.get("can_pass", false):
+		show_error("Pass is not available right now.")
 		return
 
 	error_label.text = ""
@@ -291,8 +308,8 @@ func _on_dragon_recipient_pressed(recipient_index: int) -> void:
 	if not game_store.has_active_game():
 		show_error("Create a game before sending actions.")
 		return
-	if game_store.phase != "await_dragon_recipient":
-		show_error("Dragon recipient is only available after a dragon trick is won.")
+	if not game_store.available_actions.get("can_choose_dragon_recipient", false):
+		show_error("Dragon recipient is not available right now.")
 		return
 
 	var winner_index: Variant = _dragon_winner_index()
@@ -310,11 +327,56 @@ func _on_dragon_recipient_pressed(recipient_index: int) -> void:
 	api_client.submit_dragon_recipient(game_store.game_id, game_store.selected_actor, recipient_index)
 
 
-func render_snapshot(snapshot: Dictionary) -> void:
+func _on_legal_plays_received(success: bool, game_id: String, viewer: int, payload: Dictionary) -> void:
+	if game_id != game_store.game_id or viewer != game_store.selected_viewer:
+		return
+
+	legal_plays_loading = false
+	if not success:
+		game_store.clear_legal_plays()
+		legal_plays_error = _message_from_payload(payload, "legal plays request failed")
+		_update_play_selection_label()
+		return
+
+	game_store.set_legal_plays(payload.get("plays", []))
+	legal_plays_error = ""
+	_update_play_selection_label()
+
+
+func _on_play_preview_received(
+	success: bool,
+	game_id: String,
+	viewer: int,
+	request_id: int,
+	payload: Dictionary
+) -> void:
+	if request_id != play_preview_request_id:
+		return
+	if game_id != game_store.game_id or viewer != game_store.selected_viewer:
+		return
+	if pending_play_cards.is_empty():
+		return
+
+	play_preview_loading = false
+	if not success:
+		game_store.clear_play_preview()
+		play_preview_error = _message_from_payload(payload, "play preview request failed")
+		render_buttons(game_store.available_actions)
+		_update_play_selection_label()
+		return
+
+	game_store.set_play_preview(payload)
+	play_preview_error = ""
+	render_buttons(game_store.available_actions)
+	_update_play_selection_label()
+
+
+func render_snapshot(snapshot: Dictionary, refresh_helpers: bool = true) -> void:
 	var state: Dictionary = snapshot.get("state", {})
 	var table_state: Dictionary = state.get("table", {})
 	var phase: String = str(snapshot.get("phase", "-"))
 
+	_append_effects(snapshot.get("effects", []))
 	phase_label.text = "Phase: %s" % phase
 	game_info_label.text = _game_info_text(state.get("game", {}))
 	var current_player = table_state.get("current_player_index", null)
@@ -326,6 +388,10 @@ func render_snapshot(snapshot: Dictionary) -> void:
 
 	render_hand(state.get("viewer_hand", []))
 	render_table(table_state)
+	_render_table_info(table_state)
+	_render_players_summary(state.get("players", []))
+	_render_players_out_order(state.get("players_out_order", []))
+	_render_effects()
 	_render_dragon_recipient_options(snapshot)
 	_render_round_result(snapshot.get("round_result", {}))
 	if phase != "prepare_exchange":
@@ -333,6 +399,11 @@ func render_snapshot(snapshot: Dictionary) -> void:
 	if phase != "trick":
 		_reset_play_selection()
 	render_buttons(snapshot.get("available_actions", {}))
+	_update_call_rank_ui()
+	if refresh_helpers:
+		_sync_legal_plays(snapshot)
+		_sync_play_preview()
+	_update_play_selection_label()
 
 
 func render_hand(viewer_hand: Array) -> void:
@@ -343,28 +414,28 @@ func render_table(table_state: Dictionary) -> void:
 	_render_cards(table_container, table_state.get("current_trick_cards", []))
 
 
+func _render_table_info(table_state: Dictionary) -> void:
+	var leader_index = table_state.get("leader_index", null)
+	var trick_index = table_state.get("trick_index", null)
+	table_info_label.text = "Leader: %s | Trick: %s" % [
+		"-" if leader_index == null else str(leader_index),
+		"-" if trick_index == null else str(trick_index),
+	]
+
+
 func render_buttons(actions: Dictionary) -> void:
 	refresh_button.disabled = not game_store.has_active_game()
-	pass_button.disabled = not (
-		game_store.has_active_game()
-		and game_store.phase == "trick"
-		and _actor_is_current_turn()
-	)
+	pass_button.disabled = not (game_store.has_active_game() and actions.get("can_pass", false) == true)
 	play_button.disabled = not (
 		game_store.has_active_game()
-		and game_store.phase == "trick"
-		and game_store.selected_actor == game_store.selected_viewer
-		and _actor_is_current_turn()
+		and actions.get("can_play", false) == true
 		and not pending_play_cards.is_empty()
+		and not play_preview_loading
+		and game_store.play_preview.get("can_submit_play", false) == true
 	)
-	small_tichu_button.disabled = not (
-		game_store.has_active_game()
-		and game_store.phase == "trick"
-		and game_store.selected_actor == game_store.selected_viewer
-		and actions.get("can_declare_small_tichu", false) == true
-	)
+	small_tichu_button.disabled = not (game_store.has_active_game() and actions.get("can_declare_small_tichu", false) == true)
 
-	var can_grand_tichu: bool = game_store.has_active_game() and game_store.phase == "prepare_grand_tichu"
+	var can_grand_tichu: bool = game_store.has_active_game() and actions.get("can_declare_grand_tichu", false) == true
 	grand_tichu_yes_button.disabled = not can_grand_tichu
 	grand_tichu_no_button.disabled = not can_grand_tichu
 
@@ -424,10 +495,11 @@ func _render_dragon_recipient_options(snapshot: Dictionary) -> void:
 	for child in dragon_recipient_container.get_children():
 		child.queue_free()
 
-	if snapshot.get("phase", "") != "await_dragon_recipient":
+	var actions: Dictionary = snapshot.get("available_actions", {})
+	if not actions.get("can_choose_dragon_recipient", false):
 		dragon_prompt_label.text = "Dragon Recipient: -"
 		var hidden_label := Label.new()
-		hidden_label.text = "(not needed)"
+		hidden_label.text = "(not available)"
 		dragon_recipient_container.add_child(hidden_label)
 		return
 
@@ -469,6 +541,42 @@ func _render_round_result(round_result: Dictionary) -> void:
 	]
 
 
+func _render_players_summary(players: Array) -> void:
+	if players.is_empty():
+		players_summary_label.text = "Players: -"
+		return
+
+	var lines: Array[String] = []
+	for player_data in players:
+		if typeof(player_data) != TYPE_DICTIONARY:
+			lines.append(str(player_data))
+			continue
+		var player_index = int(player_data.get("player_index", -1))
+		var hand_count = int(player_data.get("hand_count", 0))
+		var status := "out" if player_data.get("is_out", false) else "active"
+		var grand := "grand" if player_data.get("declared_grand_tichu", false) else "no grand"
+		var small := "small" if player_data.get("declared_small_tichu", false) else "no small"
+		lines.append("P%d | hand %d | %s | %s | %s" % [player_index, hand_count, status, grand, small])
+	players_summary_label.text = "Players:\n%s" % "\n".join(lines)
+
+
+func _render_players_out_order(players_out_order: Array) -> void:
+	if players_out_order.is_empty():
+		players_out_order_label.text = "Out Order: -"
+		return
+	var order_parts: Array[String] = []
+	for player_index in players_out_order:
+		order_parts.append("P%s" % str(player_index))
+	players_out_order_label.text = "Out Order: %s" % " -> ".join(order_parts)
+
+
+func _render_effects() -> void:
+	if recent_effect_lines.is_empty():
+		effects_label.text = "Effects: -"
+		return
+	effects_label.text = "Effects:\n%s" % "\n".join(recent_effect_lines)
+
+
 func _game_info_text(game_state: Dictionary) -> String:
 	var scores: Array = game_state.get("team_scores", [])
 	return "Scores: %s | Round: %s" % [str(scores), str(game_state.get("round_index", "-"))]
@@ -490,6 +598,47 @@ func _message_from_payload(payload: Dictionary, fallback: String) -> String:
 	return fallback
 
 
+func _append_effects(effects: Array) -> void:
+	if effects.is_empty():
+		return
+	for effect in effects:
+		recent_effect_lines.append(_format_effect(effect))
+	while recent_effect_lines.size() > 12:
+		recent_effect_lines.remove_at(0)
+
+
+func _format_effect(effect: Variant) -> String:
+	if typeof(effect) != TYPE_DICTIONARY:
+		return str(effect)
+
+	var effect_dict: Dictionary = effect
+	var effect_type := str(effect_dict.get("type", "effect"))
+	var keys: Array = effect_dict.keys()
+	keys.sort()
+	var detail_parts: Array[String] = []
+	for key in keys:
+		if key == "type":
+			continue
+		detail_parts.append("%s=%s" % [str(key), _format_effect_value(effect_dict.get(key))])
+	if detail_parts.is_empty():
+		return effect_type
+	return "%s | %s" % [effect_type, ", ".join(detail_parts)]
+
+
+func _format_effect_value(value: Variant) -> String:
+	if typeof(value) == TYPE_ARRAY:
+		var parts: Array[String] = []
+		for item in value:
+			if typeof(item) == TYPE_DICTIONARY and item.has("rank"):
+				parts.append(_format_card(item))
+			else:
+				parts.append(str(item))
+		return "[%s]" % ", ".join(parts)
+	if typeof(value) == TYPE_DICTIONARY and value.has("rank"):
+		return _format_card(value)
+	return str(value)
+
+
 func _setup_player_selects() -> void:
 	for player_index in range(4):
 		viewer_select.add_item("Viewer %d" % player_index, player_index)
@@ -498,10 +647,23 @@ func _setup_player_selects() -> void:
 	_select_option(actor_select, 0)
 
 
+func _setup_call_rank_select() -> void:
+	call_rank_select.clear()
+	call_rank_select.add_item("None", -1)
+	for rank in range(2, 15):
+		call_rank_select.add_item(str(rank), rank)
+	call_rank_select.select(0)
+	call_rank_select.disabled = true
+
+
 func _on_viewer_selected(index: int) -> void:
 	game_store.set_selected_viewer(viewer_select.get_item_id(index))
 	_reset_exchange_selection()
 	_reset_play_selection()
+	game_store.clear_legal_plays()
+	legal_plays_loading = false
+	legal_plays_error = ""
+	_reset_play_preview()
 	if game_store.has_active_game():
 		api_client.get_snapshot(game_store.game_id, game_store.selected_viewer)
 
@@ -516,7 +678,8 @@ func _on_actor_selected(index: int) -> void:
 			"state": game_store.state,
 			"available_actions": game_store.available_actions,
 			"round_result": game_store.round_result,
-		}
+		},
+		false
 	)
 
 
@@ -554,11 +717,8 @@ func _handle_exchange_card(card_data: Dictionary) -> void:
 
 
 func _handle_play_card(card_data: Dictionary) -> void:
-	if game_store.selected_actor != game_store.selected_viewer:
-		show_error("Set Viewer and Actor to the same player before choosing play cards.")
-		return
-	if not _actor_is_current_turn():
-		show_error("Selected actor is not the current player.")
+	if not game_store.available_actions.get("can_play", false):
+		show_error("Play is not available right now.")
 		return
 
 	if _contains_card(pending_play_cards, card_data):
@@ -566,7 +726,9 @@ func _handle_play_card(card_data: Dictionary) -> void:
 	else:
 		pending_play_cards.append(card_data.duplicate(true))
 
+	_update_call_rank_ui()
 	_update_play_selection_label()
+	_sync_play_preview()
 	render_buttons(game_store.available_actions)
 	_render_hand_cards(game_store.state.get("viewer_hand", []))
 	error_label.text = ""
@@ -591,18 +753,39 @@ func _exchange_slot_text(index: int) -> String:
 
 func _reset_play_selection() -> void:
 	pending_play_cards.clear()
+	_reset_selected_call_rank()
+	_update_call_rank_ui()
+	_reset_play_preview()
 	_update_play_selection_label()
 
 
 func _update_play_selection_label() -> void:
+	var helper_text := _play_selection_helper_text()
 	if pending_play_cards.is_empty():
 		selected_play_label.text = "Selected: -"
+		if not helper_text.is_empty():
+			selected_play_label.text += " | %s" % helper_text
 		return
 
 	var texts: Array[String] = []
 	for card_data in pending_play_cards:
 		texts.append(_format_card(card_data))
 	selected_play_label.text = "Selected: %s" % ", ".join(texts)
+	if not helper_text.is_empty():
+		selected_play_label.text += " | %s" % helper_text
+
+
+func _on_call_rank_selected(index: int) -> void:
+	var item_id := call_rank_select.get_item_id(index)
+	if item_id < 0:
+		selected_call_rank = null
+	else:
+		selected_call_rank = item_id
+	_update_call_rank_ui()
+	_update_play_selection_label()
+	_sync_play_preview()
+	render_buttons(game_store.available_actions)
+	error_label.text = ""
 
 
 func _actor_is_current_turn() -> bool:
@@ -621,8 +804,106 @@ func _can_interact_with_hand() -> bool:
 	if game_store.phase == "prepare_exchange":
 		return true
 	if game_store.phase == "trick":
-		return _actor_is_current_turn()
+		return game_store.available_actions.get("can_play", false)
 	return false
+
+
+func _sync_legal_plays(snapshot: Dictionary) -> void:
+	var state: Dictionary = snapshot.get("state", {})
+	var table_state: Dictionary = state.get("table", {})
+	var actions: Dictionary = snapshot.get("available_actions", {})
+	var phase := str(snapshot.get("phase", ""))
+	var call_rank = table_state.get("mahjong_call_rank", null)
+
+	if phase != "trick" or call_rank == null or actions.get("can_play", false) != true:
+		game_store.clear_legal_plays()
+		legal_plays_loading = false
+		legal_plays_error = ""
+		return
+
+	game_store.clear_legal_plays()
+	legal_plays_loading = true
+	legal_plays_error = ""
+	api_client.get_legal_plays(game_store.game_id, game_store.selected_viewer)
+
+
+func _sync_play_preview() -> void:
+	if pending_play_cards.is_empty():
+		_reset_play_preview()
+		return
+	if not game_store.has_active_game() or game_store.available_actions.get("can_play", false) != true:
+		_reset_play_preview()
+		return
+
+	play_preview_request_id += 1
+	play_preview_loading = true
+	play_preview_error = ""
+	game_store.clear_play_preview()
+	api_client.preview_play(
+		game_store.game_id,
+		game_store.selected_viewer,
+		pending_play_cards,
+		_selected_call_rank_payload(),
+		play_preview_request_id
+	)
+
+
+func _reset_play_preview() -> void:
+	play_preview_loading = false
+	play_preview_error = ""
+	play_preview_request_id += 1
+	game_store.clear_play_preview()
+
+
+func _play_selection_helper_text() -> String:
+	var preview_text := _play_preview_text()
+	var table_state: Dictionary = game_store.state.get("table", {})
+	var call_rank = table_state.get("mahjong_call_rank", null)
+	var texts: Array[String] = []
+	var selected_call_rank_payload = _selected_call_rank_payload()
+	if not preview_text.is_empty():
+		texts.append(preview_text)
+	if _selection_contains_mahjong() and selected_call_rank_payload != null:
+		texts.append("Call rank %s" % str(selected_call_rank_payload))
+	if game_store.phase == "trick" and call_rank != null:
+		if legal_plays_loading:
+			texts.append("Mahjong call %s | loading legal plays..." % str(call_rank))
+		elif not legal_plays_error.is_empty():
+			texts.append("Mahjong call %s | legal plays unavailable" % str(call_rank))
+		else:
+			texts.append("Mahjong call %s | legal plays %d" % [str(call_rank), game_store.legal_plays.size()])
+	return " | ".join(texts)
+
+
+func _play_preview_text() -> String:
+	if pending_play_cards.is_empty():
+		return ""
+	if play_preview_loading:
+		return "Preview: loading..."
+	if not play_preview_error.is_empty():
+		return "Preview: unavailable"
+	if game_store.play_preview.is_empty():
+		return ""
+
+	var parts: Array[String] = []
+	var combo_type = game_store.play_preview.get("combo_type", null)
+	if combo_type == null:
+		parts.append("illegal shape")
+	else:
+		parts.append(str(combo_type))
+	if game_store.play_preview.get("is_bomb", false):
+		parts.append("bomb")
+	if game_store.play_preview.get("beats_current_trick", false):
+		parts.append("beats current trick")
+	elif game_store.play_preview.get("is_legal_shape", false):
+		parts.append("does not beat current trick")
+	if not game_store.play_preview.get("satisfies_mahjong_call", true):
+		parts.append("fails mahjong call")
+	if not game_store.play_preview.get("can_submit_play", false):
+		var preview_message := str(game_store.play_preview.get("message", ""))
+		if not preview_message.is_empty() and preview_message != "selected cards do not beat the current trick":
+			parts.append(preview_message)
+	return "Preview: %s" % ", ".join(parts)
 
 
 func _contains_card(cards: Array, target: Dictionary) -> bool:
@@ -645,3 +926,46 @@ func _cards_equal(left: Dictionary, right: Dictionary) -> bool:
 
 func _is_opponent_of(player_index: int, other_player_index: int) -> bool:
 	return (player_index % 2) != (other_player_index % 2)
+
+
+func _update_call_rank_ui() -> void:
+	var table_state: Dictionary = game_store.state.get("table", {})
+	var active_call_rank = table_state.get("mahjong_call_rank", null)
+	if active_call_rank == null:
+		current_call_label.text = "Current Call: -"
+	else:
+		current_call_label.text = "Current Call: %s" % str(active_call_rank)
+
+	var can_select_call_rank: bool = (
+		game_store.has_active_game()
+		and game_store.phase == "trick"
+		and _selection_contains_mahjong()
+	)
+	if not can_select_call_rank:
+		_reset_selected_call_rank()
+	call_rank_select.disabled = not can_select_call_rank
+	_select_call_rank_value(_selected_call_rank_payload())
+
+
+func _selected_call_rank_payload():
+	return selected_call_rank
+
+
+func _selection_contains_mahjong() -> bool:
+	for card_data in pending_play_cards:
+		if int(card_data.get("rank", -1)) == 1:
+			return true
+	return false
+
+
+func _reset_selected_call_rank() -> void:
+	selected_call_rank = null
+	_select_call_rank_value(null)
+
+
+func _select_call_rank_value(call_rank) -> void:
+	var target_id := -1 if call_rank == null else int(call_rank)
+	for item_index in range(call_rank_select.item_count):
+		if call_rank_select.get_item_id(item_index) == target_id:
+			call_rank_select.select(item_index)
+			return

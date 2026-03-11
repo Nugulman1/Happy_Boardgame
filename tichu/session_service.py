@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Literal
 from uuid import uuid4
 
-from .cards import Card, make_deck
-from .combo_info import evaluate_combo
+from .cards import Card, RANK_MAHJONG, make_deck
+from .combo_info import ComboInfo, can_beat, evaluate_combo
 from .game_loop import finalize_round, is_game_over
+from .mahjong_call import can_declare_mahjong_call, selection_satisfies_mahjong_call
 from .prepare import apply_exchange, deal_initial_8, deal_remaining_6, set_leader_by_mahjong
 from .state import GameState, RoundState, init_state, new_round_state
 from .trick import (
@@ -103,6 +105,110 @@ def preview_combo(cards: list[Card]) -> dict[str, object]:
         "combo_type": combo_type,
         "is_legal_shape": combo is not None,
         "is_bomb": combo_type in ("bomb_four", "bomb_straight_flush"),
+    }
+
+
+def combo_summary_payload(combo: ComboInfo | None) -> dict[str, object] | None:
+    if combo is None:
+        return None
+
+    return {
+        "combo_type": combo.combo_type,
+        "card_count": combo.card_count,
+        "strength": None if combo.strength is None else list(combo.strength),
+        "uses_phoenix": combo.uses_phoenix,
+        "resolved_ranks": None if combo.resolved_ranks is None else list(combo.resolved_ranks),
+    }
+
+
+def preview_play(
+    session: GameSession,
+    viewer: int,
+    cards: list[Card],
+    call_rank: int | None,
+) -> dict[str, object]:
+    round_state = session.round_state
+    current_combo = round_state.current_trick_combo
+    if current_combo is None and round_state.current_trick_cards:
+        current_combo = evaluate_combo(round_state.current_trick_cards)
+
+    selected_combo = evaluate_combo(cards)
+    is_legal_shape = selected_combo is not None
+    beats_current_trick = False
+    call_rank_in_state = round_state.mahjong_call_rank
+    satisfies_mahjong_call = selection_satisfies_mahjong_call(cards, call_rank_in_state)
+    can_submit_play = False
+    reason_code = "NOT_PLAYABLE"
+    message = "play preview is not available right now"
+
+    if session.phase != "trick":
+        reason_code = "INVALID_PHASE"
+        message = f"request is not allowed during {session.phase}"
+    elif round_state.current_player_index != viewer:
+        reason_code = "NOT_CURRENT_PLAYER"
+        message = "not this player's turn"
+    elif not cards:
+        reason_code = "NO_CARDS_SELECTED"
+        message = "select at least one card"
+    elif any(card not in round_state.hands[viewer] for card in cards):
+        reason_code = "CARD_NOT_IN_HAND"
+        message = "selected card must be in the player's hand"
+    elif not is_legal_shape:
+        reason_code = "ILLEGAL_SHAPE"
+        message = "selected cards are not a legal play"
+    else:
+        contains_mahjong = any(card.rank == RANK_MAHJONG for card in cards)
+        if current_combo is None:
+            beats_current_trick = True
+        else:
+            beats_current_trick = can_beat(current_combo, selected_combo)
+
+        if not beats_current_trick:
+            reason_code = "DOES_NOT_BEAT_CURRENT_TRICK"
+            message = "selected cards do not beat the current trick"
+        elif (
+            call_rank_in_state is not None
+            and not satisfies_mahjong_call
+            and any(
+                selection_satisfies_mahjong_call(legal_play, call_rank_in_state)
+                for legal_play in get_legal_plays(round_state, viewer)
+            )
+        ):
+            reason_code = "MAHJONG_CALL_NOT_SATISFIED"
+            message = "selected cards do not satisfy the mahjong call"
+        elif contains_mahjong and not can_declare_mahjong_call(cards, call_rank):
+            reason_code = "INVALID_CALL_RANK"
+            message = "invalid mahjong call"
+        elif call_rank is not None and not contains_mahjong:
+            reason_code = "INVALID_CALL_RANK"
+            message = "mahjong call can only be declared when playing mahjong"
+        else:
+            try:
+                preview_round_state = deepcopy(round_state)
+                play_cards(preview_round_state, viewer, list(cards), call_rank)
+            except ValueError as exc:
+                reason_code = "INVALID_PLAY"
+                message = str(exc)
+            else:
+                can_submit_play = True
+                reason_code = "OK"
+                message = "play can be submitted"
+
+    return {
+        "is_legal_shape": is_legal_shape,
+        "combo_type": None if selected_combo is None else selected_combo.combo_type,
+        "is_bomb": (
+            False
+            if selected_combo is None
+            else selected_combo.combo_type in ("bomb_four", "bomb_straight_flush")
+        ),
+        "beats_current_trick": beats_current_trick,
+        "satisfies_mahjong_call": satisfies_mahjong_call,
+        "can_submit_play": can_submit_play,
+        "reason_code": reason_code,
+        "message": message,
+        "selected_combo": combo_summary_payload(selected_combo),
+        "current_trick_combo": combo_summary_payload(current_combo),
     }
 
 

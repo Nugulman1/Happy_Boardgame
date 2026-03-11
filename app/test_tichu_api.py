@@ -196,6 +196,126 @@ def test_viewer_serialization_and_helper_endpoints() -> None:
     print("viewer serialization/helper endpoints OK")
 
 
+def test_play_preview_endpoint() -> None:
+    reset_sessions()
+    game_id = _create_game()
+    _prepare_to_trick_phase(game_id)
+    session = _sessions[game_id]
+    session.round_state.current_player_index = 1
+    session.round_state.hands = [
+        [Card("S", 3)],
+        [Card("S", 4), Card("S", 8)],
+        [Card("S", 5)],
+        [Card("S", 6)],
+    ]
+    session.round_state.current_trick_cards = [Card("S", 7)]
+    session.round_state.current_trick_combo = None
+    session.round_state.current_trick_pile = [Card("S", 7)]
+
+    winning_preview = client.post(
+        f"/games/{game_id}/play-preview",
+        json={"viewer": 1, "cards": [{"suit": "S", "rank": 8}], "call_rank": None},
+    )
+    assert winning_preview.status_code == 200
+    assert winning_preview.json()["combo_type"] == "single"
+    assert winning_preview.json()["beats_current_trick"]
+    assert winning_preview.json()["can_submit_play"]
+    assert winning_preview.json()["current_trick_combo"]["combo_type"] == "single"
+
+    losing_preview = client.post(
+        f"/games/{game_id}/play-preview",
+        json={"viewer": 1, "cards": [{"suit": "S", "rank": 4}], "call_rank": None},
+    )
+    assert losing_preview.status_code == 200
+    assert not losing_preview.json()["beats_current_trick"]
+    assert not losing_preview.json()["can_submit_play"]
+    assert losing_preview.json()["reason_code"] == "DOES_NOT_BEAT_CURRENT_TRICK"
+
+    invalid_preview = client.post(
+        f"/games/{game_id}/play-preview",
+        json={
+            "viewer": 1,
+            "cards": [{"suit": "S", "rank": 4}, {"suit": "S", "rank": 8}],
+            "call_rank": None,
+        },
+    )
+    assert invalid_preview.status_code == 200
+    assert not invalid_preview.json()["is_legal_shape"]
+    assert not invalid_preview.json()["can_submit_play"]
+    assert invalid_preview.json()["reason_code"] == "ILLEGAL_SHAPE"
+
+    print("play preview endpoint OK")
+
+
+def test_play_preview_respects_mahjong_call() -> None:
+    reset_sessions()
+    game_id = _create_game()
+    _prepare_to_trick_phase(game_id)
+    session = _sessions[game_id]
+    session.phase = "trick"
+    session.round_state = new_round_state()
+    session.round_state.leader_index = 0
+    session.round_state.current_player_index = 1
+    session.round_state.hands = [
+        [Card("S", 3)],
+        [Card("S", 8), Card("S", 9)],
+        [Card("S", 10)],
+        [Card("S", 11)],
+    ]
+    session.round_state.current_trick_cards = [Card("H", 7)]
+    session.round_state.current_trick_combo = None
+    session.round_state.current_trick_pile = [Card("H", 7)]
+    session.round_state.mahjong_call_rank = 9
+
+    payload = client.post(
+        f"/games/{game_id}/play-preview",
+        json={"viewer": 1, "cards": [{"suit": "S", "rank": 8}], "call_rank": None},
+    )
+    assert payload.status_code == 200
+    assert not payload.json()["satisfies_mahjong_call"]
+    assert not payload.json()["can_submit_play"]
+    assert payload.json()["reason_code"] == "MAHJONG_CALL_NOT_SATISFIED"
+
+    matching_payload = client.post(
+        f"/games/{game_id}/play-preview",
+        json={"viewer": 1, "cards": [{"suit": "S", "rank": 9}], "call_rank": None},
+    )
+    assert matching_payload.status_code == 200
+    assert matching_payload.json()["satisfies_mahjong_call"]
+    assert matching_payload.json()["can_submit_play"]
+
+    print("play preview mahjong call OK")
+
+
+def test_play_preview_allows_valid_mahjong_call_on_opening_play() -> None:
+    reset_sessions()
+    game_id = _create_game()
+    _prepare_to_trick_phase(game_id)
+    session = _sessions[game_id]
+    session.phase = "trick"
+    session.round_state = new_round_state()
+    session.round_state.leader_index = 0
+    session.round_state.current_player_index = 0
+    session.round_state.hands = [
+        [Card("", 1), Card("S", 9)],
+        [Card("S", 8)],
+        [Card("S", 10)],
+        [Card("S", 11)],
+    ]
+    session.round_state.current_trick_cards = []
+    session.round_state.current_trick_combo = None
+    session.round_state.current_trick_pile = []
+
+    payload = client.post(
+        f"/games/{game_id}/play-preview",
+        json={"viewer": 0, "cards": [{"suit": "", "rank": 1}], "call_rank": 9},
+    )
+    assert payload.status_code == 200
+    assert payload.json()["can_submit_play"]
+    assert payload.json()["reason_code"] == "OK"
+    print("play preview opening mahjong call OK")
+
+
 def test_small_tichu_play_and_pass_flow() -> None:
     reset_sessions()
     game_id = _create_game()
@@ -236,6 +356,46 @@ def test_small_tichu_play_and_pass_flow() -> None:
     assert payload["effects"][-1] == {"type": "turn_changed", "player_index": 2}
     assert payload["state"]["table"]["current_player_index"] == 2
     print("small tichu/play/pass flow OK")
+
+
+def test_grand_tichu_declarer_cannot_declare_small_tichu() -> None:
+    reset_sessions()
+    game_id = _create_game()
+
+    for player_index in range(4):
+        response = client.post(
+            f"/games/{game_id}/prepare/grand-tichu",
+            json={"player_index": player_index, "declare": player_index == 0},
+        )
+        assert response.status_code == 200
+
+    state = _get_state(game_id, 0)
+    assert state["phase"] == "prepare_exchange"
+
+    for player_index in range(4):
+        hand = _get_state(game_id, player_index)["state"]["viewer_hand"]
+        response = client.post(
+            f"/games/{game_id}/prepare/exchange",
+            json={
+                "player_index": player_index,
+                "to_left": hand[0],
+                "to_team": hand[1],
+                "to_right": hand[2],
+            },
+        )
+        assert response.status_code == 200
+
+    trick_state = _get_state(game_id, 0)
+    assert trick_state["phase"] == "trick"
+    assert not trick_state["available_actions"]["can_declare_small_tichu"]
+
+    response = client.post(
+        f"/games/{game_id}/actions/small-tichu",
+        json={"player_index": 0},
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["message"] == "small tichu cannot be declared"
+    print("grand tichu blocks small tichu API OK")
 
 
 def test_dragon_recipient_flow() -> None:
@@ -352,6 +512,8 @@ def main() -> None:
     test_create_and_viewer_snapshot()
     test_prepare_flow()
     test_viewer_serialization_and_helper_endpoints()
+    test_play_preview_endpoint()
+    test_play_preview_respects_mahjong_call()
     test_small_tichu_play_and_pass_flow()
     test_dragon_recipient_flow()
     test_round_finish_auto_next_round_flow()

@@ -27,193 +27,274 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
 
-[node name="TitleLabel" type="Label" parent="RootLayout"]
+[node name="HeaderSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="RootLayout/HeaderSection"]
 layout_mode = 2
 text = "Happy Boardgame"
 label_settings = SubResource("LabelSettings_title")
 
-[node name="StatusLabel" type="Label" parent="RootLayout"]
+[node name="StatusRow" type="HBoxContainer" parent="RootLayout/HeaderSection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StatusLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
 layout_mode = 2
 text = "Server: checking..."
 
-[node name="PhaseLabel" type="Label" parent="RootLayout"]
+[node name="PhaseLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
 layout_mode = 2
 text = "Phase: -"
 
-[node name="TurnLabel" type="Label" parent="RootLayout"]
+[node name="TurnLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
 layout_mode = 2
 text = "Turn: -"
 
-[node name="GameInfoLabel" type="Label" parent="RootLayout"]
+[node name="GameInfoLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
 layout_mode = 2
 text = "Scores: - | Round: -"
 
-[node name="ErrorLabel" type="Label" parent="RootLayout"]
+[node name="ErrorLabel" type="Label" parent="RootLayout/HeaderSection"]
 layout_mode = 2
 text = ""
 modulate = Color(0.85, 0.2, 0.2, 1)
 autowrap_mode = 3
 
-[node name="ControlRow" type="HBoxContainer" parent="RootLayout"]
+[node name="ControlSection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ControlRow" type="HBoxContainer" parent="RootLayout/ControlSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ViewerLabel" type="Label" parent="RootLayout/ControlRow"]
+[node name="ViewerLabel" type="Label" parent="RootLayout/ControlSection/ControlRow"]
 layout_mode = 2
 text = "Viewer"
 
-[node name="ViewerSelect" type="OptionButton" parent="RootLayout/ControlRow"]
+[node name="ViewerSelect" type="OptionButton" parent="RootLayout/ControlSection/ControlRow"]
 layout_mode = 2
 
-[node name="ActorLabel" type="Label" parent="RootLayout/ControlRow"]
+[node name="ActorLabel" type="Label" parent="RootLayout/ControlSection/ControlRow"]
 layout_mode = 2
 text = "Actor"
 
-[node name="ActorSelect" type="OptionButton" parent="RootLayout/ControlRow"]
+[node name="ActorSelect" type="OptionButton" parent="RootLayout/ControlSection/ControlRow"]
 layout_mode = 2
 
-[node name="ButtonRow" type="HBoxContainer" parent="RootLayout"]
+[node name="ButtonRow" type="HBoxContainer" parent="RootLayout/ControlSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="CreateGameButton" type="Button" parent="RootLayout/ButtonRow"]
+[node name="CreateGameButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
 layout_mode = 2
 text = "Create Game"
 
-[node name="RefreshButton" type="Button" parent="RootLayout/ButtonRow"]
+[node name="RefreshButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
 layout_mode = 2
 text = "Refresh"
 disabled = true
 
-[node name="PassButton" type="Button" parent="RootLayout/ButtonRow"]
+[node name="PassButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
 layout_mode = 2
 text = "Pass"
 disabled = true
 
-[node name="PlayButton" type="Button" parent="RootLayout/ButtonRow"]
+[node name="PlayButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
 layout_mode = 2
 text = "Play"
 disabled = true
 
-[node name="SmallTichuButton" type="Button" parent="RootLayout/ButtonRow"]
+[node name="SmallTichuButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
 layout_mode = 2
 text = "Small Tichu"
 disabled = true
 
-[node name="PrepareRow" type="HBoxContainer" parent="RootLayout"]
+[node name="PrepareRow" type="HBoxContainer" parent="RootLayout/ControlSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="GrandTichuYesButton" type="Button" parent="RootLayout/PrepareRow"]
+[node name="GrandTichuYesButton" type="Button" parent="RootLayout/ControlSection/PrepareRow"]
 layout_mode = 2
 text = "Grand Tichu Yes"
 disabled = true
 
-[node name="GrandTichuNoButton" type="Button" parent="RootLayout/PrepareRow"]
+[node name="GrandTichuNoButton" type="Button" parent="RootLayout/ControlSection/PrepareRow"]
 layout_mode = 2
 text = "Grand Tichu No"
 disabled = true
 
-[node name="ExchangeSection" type="VBoxContainer" parent="RootLayout"]
+[node name="ContentRow" type="HBoxContainer" parent="RootLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="LeftColumn" type="VBoxContainer" parent="RootLayout/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="TableSection" type="VBoxContainer" parent="RootLayout/ContentRow/LeftColumn"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ExchangeTitleLabel" type="Label" parent="RootLayout/ExchangeSection"]
+[node name="TableTitleLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+layout_mode = 2
+text = "Table Cards"
+
+[node name="TableInfoLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+layout_mode = 2
+text = "Leader: - | Trick: -"
+autowrap_mode = 3
+
+[node name="TableContainer" type="HBoxContainer" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HandSection" type="VBoxContainer" parent="RootLayout/ContentRow/LeftColumn"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HandTitleLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/HandSection"]
+layout_mode = 2
+text = "Viewer Hand"
+
+[node name="HandContainer" type="HBoxContainer" parent="RootLayout/ContentRow/LeftColumn/HandSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RightColumn" type="VBoxContainer" parent="RootLayout/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="PlayersSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayersTitleLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection"]
+layout_mode = 2
+text = "Players"
+
+[node name="PlayersSummaryLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection"]
+layout_mode = 2
+text = "Players: -"
+autowrap_mode = 3
+
+[node name="PlayersOutOrderLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection"]
+layout_mode = 2
+text = "Out Order: -"
+autowrap_mode = 3
+
+[node name="ExchangeSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ExchangeTitleLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection"]
 layout_mode = 2
 text = "Exchange Selection"
 
-[node name="ExchangeSelectionRow" type="HBoxContainer" parent="RootLayout/ExchangeSection"]
+[node name="ExchangeSelectionRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/ExchangeSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="SelectedLeftLabel" type="Label" parent="RootLayout/ExchangeSection/ExchangeSelectionRow"]
+[node name="SelectedLeftLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow"]
 layout_mode = 2
 text = "Left: -"
 
-[node name="SelectedTeamLabel" type="Label" parent="RootLayout/ExchangeSection/ExchangeSelectionRow"]
+[node name="SelectedTeamLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow"]
 layout_mode = 2
 text = "Team: -"
 
-[node name="SelectedRightLabel" type="Label" parent="RootLayout/ExchangeSection/ExchangeSelectionRow"]
+[node name="SelectedRightLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow"]
 layout_mode = 2
 text = "Right: -"
 
-[node name="ExchangeButtonRow" type="HBoxContainer" parent="RootLayout/ExchangeSection"]
+[node name="ExchangeButtonRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/ExchangeSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="SubmitExchangeButton" type="Button" parent="RootLayout/ExchangeSection/ExchangeButtonRow"]
+[node name="SubmitExchangeButton" type="Button" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow"]
 layout_mode = 2
 text = "Submit Exchange"
 disabled = true
 
-[node name="ClearExchangeButton" type="Button" parent="RootLayout/ExchangeSection/ExchangeButtonRow"]
+[node name="ClearExchangeButton" type="Button" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow"]
 layout_mode = 2
 text = "Clear Exchange"
 disabled = true
 
-[node name="PlaySection" type="VBoxContainer" parent="RootLayout"]
+[node name="PlaySection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PlayTitleLabel" type="Label" parent="RootLayout/PlaySection"]
+[node name="PlayTitleLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
 layout_mode = 2
 text = "Play Selection"
 
-[node name="SelectedPlayLabel" type="Label" parent="RootLayout/PlaySection"]
+[node name="SelectedPlayLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
 layout_mode = 2
 text = "Selected: -"
 
-[node name="PlaySelectionButtonRow" type="HBoxContainer" parent="RootLayout/PlaySection"]
+[node name="CurrentCallLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+layout_mode = 2
+text = "Current Call: -"
+
+[node name="CallRankRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ClearPlaySelectionButton" type="Button" parent="RootLayout/PlaySection/PlaySelectionButtonRow"]
+[node name="CallRankLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection/CallRankRow"]
+layout_mode = 2
+text = "Call Rank"
+
+[node name="CallRankSelect" type="OptionButton" parent="RootLayout/ContentRow/RightColumn/PlaySection/CallRankRow"]
+layout_mode = 2
+disabled = true
+
+[node name="PlaySelectionButtonRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ClearPlaySelectionButton" type="Button" parent="RootLayout/ContentRow/RightColumn/PlaySection/PlaySelectionButtonRow"]
 layout_mode = 2
 text = "Clear Play Selection"
 disabled = true
 
-[node name="DragonSection" type="VBoxContainer" parent="RootLayout"]
+[node name="DragonSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DragonPromptLabel" type="Label" parent="RootLayout/DragonSection"]
+[node name="DragonPromptLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/DragonSection"]
 layout_mode = 2
 text = "Dragon Recipient: -"
 
-[node name="DragonRecipientContainer" type="HBoxContainer" parent="RootLayout/DragonSection"]
+[node name="DragonRecipientContainer" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/DragonSection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ResultSection" type="VBoxContainer" parent="RootLayout"]
+[node name="ResultSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="RoundResultLabel" type="Label" parent="RootLayout/ResultSection"]
+[node name="RoundResultLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ResultSection"]
 layout_mode = 2
 text = "Round Result: -"
 autowrap_mode = 3
 
-[node name="HandSection" type="VBoxContainer" parent="RootLayout"]
+[node name="EffectsSection" type="VBoxContainer" parent="RootLayout"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="HandTitleLabel" type="Label" parent="RootLayout/HandSection"]
+[node name="EffectsTitleLabel" type="Label" parent="RootLayout/EffectsSection"]
 layout_mode = 2
-text = "Viewer Hand"
+text = "Recent Effects"
 
-[node name="HandContainer" type="HBoxContainer" parent="RootLayout/HandSection"]
+[node name="EffectsLabel" type="Label" parent="RootLayout/EffectsSection"]
 layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="TableSection" type="VBoxContainer" parent="RootLayout"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="TableTitleLabel" type="Label" parent="RootLayout/TableSection"]
-layout_mode = 2
-text = "Table Cards"
-
-[node name="TableContainer" type="HBoxContainer" parent="RootLayout/TableSection"]
-layout_mode = 2
-theme_override_constants/separation = 8
+text = "Effects: -"
+autowrap_mode = 3

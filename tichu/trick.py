@@ -125,6 +125,7 @@ def can_declare_small_tichu(round_state: RoundState, player_index: int) -> bool:
     return (
         0 <= player_index < 4
         and bool(round_state.hands[player_index])
+        and player_index not in round_state.grand_tichu_declarers
         and player_index not in round_state.small_tichu_declarers
         and player_index not in round_state.played_first_card_players
     )

@@ -7,24 +7,19 @@
 
 ## 최우선
 
-- Godot `play` 요청에 참새 콜 `call_rank` 입력 UI 추가
-  - 현재 백엔드는 `POST /games/{game_id}/actions/play`의 `call_rank`를 지원하지만 Godot는 항상 `null`만 보낸다.
-  - `state.table.mahjong_call_rank`도 함께 표시해 콜 상태를 화면에서 확인 가능하게 만들기
-- Godot 버튼 활성/비활성 로직을 서버 `available_actions` 기준으로 정렬
-  - `can_play`
-  - `can_pass`
-  - `can_declare_grand_tichu`
-  - `can_declare_small_tichu`
-  - `can_choose_dragon_recipient`
-- Godot 화면에 아직 미사용인 snapshot 필드 반영
-  - `state.players` 플레이어 요약
-  - `state.table.leader_index`
-  - `state.table.trick_index`
-  - `state.players_out_order`
-- Godot에 보조 API 연결
-  - `GET /legal-plays`
-  - `POST /preview-combo`
-- POST 응답의 `effects`를 간단 로그 또는 디버그 패널로 표시
+- WebSocket 전환
+  - 현재 Godot는 모든 상태 갱신을 HTTP 요청/응답과 수동 새로고침에 의존한다.
+  - `game_id` 단위 브로드캐스트, 액션 결과 push, 연결 끊김 후 재동기화 규칙을 먼저 정리하기
+  - 기존 snapshot/effects 포맷을 최대한 재사용해 WebSocket 이벤트 스키마를 맞추기
+- 멀티플레이 세션 계층 설계
+  - viewer 고정 클라이언트 기준으로 actor 테스트 UI를 어떻게 대체할지 정리
+  - 방 입장, 재접속, 관전자 여부, 턴 주체 검증 책임을 HTTP/WebSocket 경계에서 정리
+- Godot에 `preview-combo` 보조 API 연결
+  - 현재는 `legal-plays`와 `play-preview`만 연결되어 있다.
+  - 선택 카드 족보 이름/폭탄 여부를 별도 패널이나 선택 카드 라벨에 보여주기
+- Godot helper UX 정리
+  - 참새 콜 강제 상황에서 `legal-plays`와 `play-preview` 메시지를 더 직관적으로 노출
+  - exchange 구간도 서버 계약 기반으로 활성/비활성 신호를 정리할지 결정
 
 ---
 
@@ -36,6 +31,7 @@
 - 에러 응답을 Godot UI/로그에 더 명확히 표시하는 흐름 보강
 - helper API 연동 후 선택 카드 UX 다듬기
   - 현재 선택 카드 하이라이트와 합법 조합 안내 정리
+  - `preview-combo`까지 붙인 뒤 표시 정보 중복을 정리
 
 ---
 
@@ -59,7 +55,6 @@
   - 액션 브로드캐스트
   - 재접속
   - 저장
-- 필요 시 WebSocket 전환 또는 추가
 - 멀티플레이 실시간 동기화 개선
 
 ---
@@ -102,10 +97,11 @@
 - 보조 API 1차 구현
   - legal-plays
   - preview-combo
+  - play-preview
 - HTTP 기준 핵심 플레이 흐름 테스트 재검증
   - 새 게임 생성 → 준비 단계 → 스몰 티츄/플레이/패스 → 라운드 종료 → 다음 라운드
   - viewer별 직렬화 차이 점검
-  - `legal-plays`, `preview-combo` 보조 API 점검
+  - `legal-plays`, `preview-combo`, `play-preview` 보조 API 점검
 - Godot 1차 연동 최소 스펙 문서화
   - `docs/Godot_1차_연동_최소_스펙.md`
 - Godot 프로젝트 기본 구조 만들기
@@ -113,7 +109,7 @@
   - 백엔드 `/health` 연결 확인
   - 게임 생성/상태 조회/액션 요청 연결
 - Godot 전역 상태 저장소 설계
-  - `game_id`, `viewer`, `phase`, `state`, `available_actions`, `round_result`, `effects` 저장
+  - `game_id`, `viewer`, `phase`, `state`, `available_actions`, `round_result`, `effects`, `legal_plays`, `play_preview` 저장
   - 액션 응답 snapshot 기준 상태 갱신
 - 서버 상태를 화면에 반영하는 기본 테스트 UI 만들기
   - 손패
@@ -127,3 +123,22 @@
   - play
   - pass
   - dragon recipient 선택
+- Godot 테스트 UI에 현재 라운드 정보 반영
+  - `mahjong_call_rank`
+  - `leader_index`, `trick_index`
+  - `state.players`
+  - `players_out_order`
+- Godot 액션 버튼을 `available_actions` 기준으로 정렬
+  - `play`
+  - `pass`
+  - `grand tichu`
+  - `small tichu`
+  - `dragon recipient`
+- Godot helper API 1차 연동
+  - `GET /legal-plays`
+  - `POST /games/{game_id}/play-preview`
+- Godot `play` 요청에 참새 콜 `call_rank` 입력 UI 추가
+- POST 응답의 `effects` 로그 표시
+- 시나리오 하네스 추가
+  - `tichu/scenario_harness.py`
+  - 고정 시나리오/CLI로 참새 콜, 용 수령자, 라운드 종료 직전 흐름 재현

@@ -9,6 +9,8 @@ signal small_tichu_submitted(success: bool, payload: Dictionary)
 signal play_submitted(success: bool, payload: Dictionary)
 signal pass_submitted(success: bool, payload: Dictionary)
 signal dragon_recipient_submitted(success: bool, payload: Dictionary)
+signal legal_plays_received(success: bool, game_id: String, viewer: int, payload: Dictionary)
+signal play_preview_received(success: bool, game_id: String, viewer: int, request_id: int, payload: Dictionary)
 
 const BASE_URL := "http://127.0.0.1:8000"
 
@@ -26,6 +28,27 @@ func create_game() -> void:
 func get_snapshot(game_id: String, viewer: int) -> void:
 	var payload := await _request_json("/games/%s?viewer=%d" % [game_id, viewer], HTTPClient.METHOD_GET)
 	snapshot_received.emit(not payload.has("error"), payload)
+
+
+func get_legal_plays(game_id: String, viewer: int) -> void:
+	var payload := await _request_json("/games/%s/legal-plays?viewer=%d" % [game_id, viewer], HTTPClient.METHOD_GET)
+	legal_plays_received.emit(not payload.has("error"), game_id, viewer, payload)
+
+
+func preview_play(game_id: String, viewer: int, cards: Array, call_rank: Variant, request_id: int) -> void:
+	var body := JSON.stringify(
+		{
+			"viewer": viewer,
+			"cards": cards,
+			"call_rank": call_rank,
+		}
+	)
+	var payload := await _request_json(
+		"/games/%s/play-preview" % game_id,
+		HTTPClient.METHOD_POST,
+		body
+	)
+	play_preview_received.emit(not payload.has("error"), game_id, viewer, request_id, payload)
 
 
 func submit_grand_tichu(game_id: String, player_index: int, declare: bool) -> void:
@@ -74,12 +97,12 @@ func submit_small_tichu(game_id: String, player_index: int) -> void:
 	small_tichu_submitted.emit(not payload.has("error"), payload)
 
 
-func submit_play(game_id: String, player_index: int, cards: Array) -> void:
+func submit_play(game_id: String, player_index: int, cards: Array, call_rank: Variant) -> void:
 	var body := JSON.stringify(
 		{
 			"player_index": player_index,
 			"cards": cards,
-			"call_rank": null,
+			"call_rank": call_rank,
 		}
 	)
 	var payload := await _request_json(

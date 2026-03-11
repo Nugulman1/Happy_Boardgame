@@ -5,14 +5,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from tichu import Card
+from tichu import Card, evaluate_combo
 from tichu.session_service import (
     GameSession,
     SessionActionError,
+    combo_summary_payload,
     create_session,
     get_available_actions,
     get_legal_plays_for_viewer,
     preview_combo as preview_combo_payload,
+    preview_play as preview_play_payload,
     submit_dragon_recipient as submit_dragon_recipient_action,
     submit_exchange_choice,
     submit_grand_tichu_response,
@@ -69,6 +71,12 @@ class DragonRecipientRequest(BaseModel):
 class PreviewComboRequest(BaseModel):
     viewer: int
     cards: list[CardModel]
+
+
+class PlayPreviewRequest(BaseModel):
+    viewer: int
+    cards: list[CardModel]
+    call_rank: int | None = None
 
 
 router = APIRouter()
@@ -155,6 +163,9 @@ def _table_payload(session: GameSession) -> dict[str, object]:
     round_state = session.round_state
     leader_index: int | None = round_state.leader_index
     current_player_index: int | None = round_state.current_player_index
+    current_trick_combo = round_state.current_trick_combo
+    if current_trick_combo is None and round_state.current_trick_cards:
+        current_trick_combo = evaluate_combo(round_state.current_trick_cards)
     if session.phase in ("prepare_grand_tichu", "prepare_exchange"):
         leader_index = None
         current_player_index = None
@@ -165,6 +176,7 @@ def _table_payload(session: GameSession) -> dict[str, object]:
         "trick_index": round_state.trick_index,
         "mahjong_call_rank": round_state.mahjong_call_rank,
         "current_trick_cards": _cards_payload(round_state.current_trick_cards),
+        "current_trick_combo": combo_summary_payload(current_trick_combo),
     }
 
 
@@ -327,3 +339,11 @@ def preview_combo(game_id: str, payload: PreviewComboRequest):
     _validate_viewer(payload.viewer)
     cards = _cards_from_models(payload.cards)
     return preview_combo_payload(cards)
+
+
+@router.post("/games/{game_id}/play-preview")
+def play_preview(game_id: str, payload: PlayPreviewRequest):
+    session = _get_session(game_id)
+    _validate_viewer(payload.viewer)
+    cards = _cards_from_models(payload.cards)
+    return preview_play_payload(session, payload.viewer, cards, payload.call_rank)
