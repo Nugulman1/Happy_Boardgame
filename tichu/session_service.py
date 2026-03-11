@@ -43,6 +43,7 @@ class GameSession:
     grand_tichu_responses: dict[int, bool] = field(default_factory=dict)
     exchange_choices: dict[int, tuple[Card, Card, Card]] = field(default_factory=dict)
     last_round_result: dict[str, object] | None = None
+    seat_tokens_by_player: dict[int, str] | None = None
 
 
 class SessionActionError(Exception):
@@ -52,7 +53,7 @@ class SessionActionError(Exception):
         super().__init__(message)
 
 
-def create_session() -> GameSession:
+def create_session(seat_tokens_by_player: dict[int, str] | None = None) -> GameSession:
     game_id = uuid4().hex
     state = GameState()
     init_state(state)
@@ -64,6 +65,7 @@ def create_session() -> GameSession:
         state=state,
         round_state=round_state,
         phase="prepare_grand_tichu",
+        seat_tokens_by_player=seat_tokens_by_player,
     )
 
 

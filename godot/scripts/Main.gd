@@ -2,15 +2,26 @@ extends Control
 
 const ApiClientScript = preload("res://scripts/ApiClient.gd")
 const GameStoreScript = preload("res://scripts/GameStore.gd")
+const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 
 @onready var status_label: Label = $"RootLayout/HeaderSection/StatusRow/StatusLabel"
 @onready var phase_label: Label = $"RootLayout/HeaderSection/StatusRow/PhaseLabel"
 @onready var turn_label: Label = $"RootLayout/HeaderSection/StatusRow/TurnLabel"
 @onready var game_info_label: Label = $"RootLayout/HeaderSection/StatusRow/GameInfoLabel"
 @onready var error_label: Label = $"RootLayout/HeaderSection/ErrorLabel"
+@onready var lobby_section: VBoxContainer = $"RootLayout/LobbySection"
+@onready var room_status_label: Label = $"RootLayout/LobbySection/RoomStatusLabel"
+@onready var room_code_input: LineEdit = $"RootLayout/LobbySection/RoomControlsRow/RoomCodeInput"
+@onready var create_room_button: Button = $"RootLayout/LobbySection/RoomControlsRow/CreateRoomButton"
+@onready var start_room_button: Button = $"RootLayout/LobbySection/RoomControlsRow/StartRoomButton"
+@onready var leave_room_button: Button = $"RootLayout/LobbySection/RoomControlsRow/LeaveRoomButton"
 @onready var viewer_select: OptionButton = $"RootLayout/ControlSection/ControlRow/ViewerSelect"
 @onready var actor_select: OptionButton = $"RootLayout/ControlSection/ControlRow/ActorSelect"
 @onready var create_game_button: Button = $"RootLayout/ControlSection/ButtonRow/CreateGameButton"
+@onready var control_row: HBoxContainer = $"RootLayout/ControlSection/ControlRow"
+@onready var control_section: VBoxContainer = $"RootLayout/ControlSection"
+@onready var content_row: HBoxContainer = $"RootLayout/ContentRow"
+@onready var effects_section: VBoxContainer = $"RootLayout/EffectsSection"
 @onready var refresh_button: Button = $"RootLayout/ControlSection/ButtonRow/RefreshButton"
 @onready var pass_button: Button = $"RootLayout/ControlSection/ButtonRow/PassButton"
 @onready var play_button: Button = $"RootLayout/ControlSection/ButtonRow/PlayButton"
@@ -35,6 +46,12 @@ const GameStoreScript = preload("res://scripts/GameStore.gd")
 @onready var hand_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/HandSection/HandContainer"
 @onready var table_info_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableInfoLabel"
 @onready var table_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/TableSection/TableContainer"
+@onready var seat_buttons: Array[Button] = [
+	$"RootLayout/LobbySection/SeatRow/Seat0Button",
+	$"RootLayout/LobbySection/SeatRow/Seat1Button",
+	$"RootLayout/LobbySection/SeatRow/Seat2Button",
+	$"RootLayout/LobbySection/SeatRow/Seat3Button",
+]
 
 var api_client
 var game_store
@@ -49,6 +66,7 @@ var selected_call_rank = null
 var recent_effect_lines: Array[String] = []
 var http_status_message := "Server: checking..."
 var socket_status_message := "Live: disconnected"
+var restoring_session := false
 
 
 func _ready() -> void:
@@ -60,17 +78,23 @@ func _ready() -> void:
 	api_client.health_checked.connect(_on_health_checked)
 	api_client.game_created.connect(_on_game_created)
 	api_client.snapshot_received.connect(_on_snapshot_received)
-	api_client.grand_tichu_submitted.connect(_on_grand_tichu_submitted)
-	api_client.exchange_submitted.connect(_on_exchange_submitted)
-	api_client.small_tichu_submitted.connect(_on_small_tichu_submitted)
-	api_client.play_submitted.connect(_on_play_submitted)
-	api_client.pass_submitted.connect(_on_pass_submitted)
-	api_client.dragon_recipient_submitted.connect(_on_dragon_recipient_submitted)
+	api_client.room_created.connect(_on_room_created)
+	api_client.room_joined.connect(_on_room_joined)
+	api_client.room_snapshot_loaded.connect(_on_room_snapshot_loaded)
+	api_client.room_started.connect(_on_room_started)
+	api_client.room_left.connect(_on_room_left)
 	api_client.legal_plays_received.connect(_on_legal_plays_received)
 	api_client.play_preview_received.connect(_on_play_preview_received)
 	api_client.socket_snapshot_received.connect(_on_socket_snapshot_received)
+	api_client.room_socket_snapshot_received.connect(_on_room_socket_snapshot_received)
+	api_client.socket_action_result.connect(_on_socket_action_result)
+	api_client.socket_action_error.connect(_on_socket_action_error)
+	api_client.room_socket_error.connect(_on_room_socket_error)
 	api_client.socket_connection_changed.connect(_on_socket_connection_changed)
 
+	create_room_button.pressed.connect(_on_create_room_pressed)
+	start_room_button.pressed.connect(_on_start_room_pressed)
+	leave_room_button.pressed.connect(_on_leave_room_pressed)
 	create_game_button.pressed.connect(_on_create_game_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
 	pass_button.pressed.connect(_on_pass_pressed)
@@ -87,6 +111,8 @@ func _ready() -> void:
 	viewer_select.item_selected.connect(_on_viewer_selected)
 	actor_select.item_selected.connect(_on_actor_selected)
 	call_rank_select.item_selected.connect(_on_call_rank_selected)
+	for seat_index in range(seat_buttons.size()):
+		seat_buttons[seat_index].pressed.connect(_on_join_seat_pressed.bind(seat_index))
 
 	render_buttons({})
 	_reset_exchange_selection()
@@ -95,13 +121,22 @@ func _ready() -> void:
 	_render_cards(table_container, [])
 	_render_dragon_recipient_options({})
 	_render_round_result({})
+	create_game_button.visible = false
+	control_row.visible = false
+	viewer_select.disabled = true
+	actor_select.disabled = true
+	content_row.visible = false
+	control_section.visible = false
+	effects_section.visible = false
+	_update_room_ui()
 	_update_status_label()
 	api_client.check_health()
+	_try_restore_saved_session()
 
 
 func _exit_tree() -> void:
 	if api_client != null:
-		api_client.disconnect_game_socket(false)
+		api_client.disconnect_socket(false)
 
 
 func _on_health_checked(success: bool, payload: Dictionary) -> void:
@@ -154,65 +189,128 @@ func _on_socket_snapshot_received(game_id: String, viewer: int, snapshot: Dictio
 func _on_socket_connection_changed(connected: bool, message: String) -> void:
 	socket_status_message = message
 	_update_status_label()
+	_update_room_ui()
+	if game_store.has_active_game():
+		render_buttons(game_store.available_actions)
 	if connected:
 		error_label.text = ""
 
 
-func _on_grand_tichu_submitted(success: bool, payload: Dictionary) -> void:
-	if not success:
-		show_error(_message_from_payload(payload, "grand tichu request failed"))
-		return
+func _on_socket_action_result(_request_id: int, action: String, _effects: Array) -> void:
+	match action:
+		"exchange":
+			_reset_exchange_selection()
+		"play", "pass":
+			_reset_play_selection()
 
-	_apply_action_response(payload)
+	render_buttons(game_store.available_actions)
+	_render_hand_cards(game_store.state.get("viewer_hand", []))
+	_update_play_selection_label()
 	error_label.text = ""
 
 
-func _on_exchange_submitted(success: bool, payload: Dictionary) -> void:
-	if not success:
-		show_error(_message_from_payload(payload, "exchange request failed"))
-		return
+func _on_socket_action_error(_request_id: int, action: String, error_payload: Dictionary) -> void:
+	var fallback := "%s request failed" % action if not action.is_empty() else "socket action failed"
+	show_error(_message_from_payload({"error": error_payload}, fallback))
 
-	_reset_exchange_selection()
-	_apply_action_response(payload)
+
+func _on_room_created(success: bool, payload: Dictionary) -> void:
+	if not success:
+		show_error(_message_from_payload(payload, "room creation failed"))
+		return
+	_apply_room_identity(payload)
+	_apply_room_snapshot(payload.get("room_snapshot", {}))
+	api_client.connect_room_socket(game_store.room_code, game_store.seat_token)
 	error_label.text = ""
 
 
-func _on_small_tichu_submitted(success: bool, payload: Dictionary) -> void:
+func _on_room_joined(success: bool, payload: Dictionary) -> void:
 	if not success:
-		show_error(_message_from_payload(payload, "small tichu request failed"))
+		show_error(_message_from_payload(payload, "room join failed"))
 		return
-
-	_apply_action_response(payload)
+	_apply_room_identity(payload)
+	_apply_room_snapshot(payload.get("room_snapshot", {}))
+	api_client.connect_room_socket(game_store.room_code, game_store.seat_token)
 	error_label.text = ""
 
 
-func _on_play_submitted(success: bool, payload: Dictionary) -> void:
+func _on_room_snapshot_loaded(success: bool, payload: Dictionary) -> void:
+	restoring_session = false
 	if not success:
-		show_error(_message_from_payload(payload, "play request failed"))
+		_clear_saved_session()
+		show_error(_message_from_payload(payload, "saved room restore failed"))
 		return
-
-	_reset_play_selection()
-	_apply_action_response(payload)
+	_apply_room_identity(payload)
+	_apply_room_snapshot(payload.get("room_snapshot", {}))
+	_resume_room_or_game_socket()
 	error_label.text = ""
 
 
-func _on_pass_submitted(success: bool, payload: Dictionary) -> void:
+func _on_room_started(success: bool, payload: Dictionary) -> void:
 	if not success:
-		show_error(_message_from_payload(payload, "pass request failed"))
+		show_error(_message_from_payload(payload, "room start failed"))
 		return
-
-	_reset_play_selection()
-	_apply_action_response(payload)
+	_apply_room_snapshot(payload.get("room_snapshot", {}))
 	error_label.text = ""
 
 
-func _on_dragon_recipient_submitted(success: bool, payload: Dictionary) -> void:
+func _on_room_left(success: bool, payload: Dictionary) -> void:
 	if not success:
-		show_error(_message_from_payload(payload, "dragon recipient request failed"))
+		show_error(_message_from_payload(payload, "leave room failed"))
 		return
-
-	_apply_action_response(payload)
+	api_client.disconnect_socket(false)
+	if payload.get("room_closed", false):
+		_clear_room_runtime()
+	else:
+		_clear_room_runtime()
 	error_label.text = ""
+
+
+func _on_room_socket_snapshot_received(room_code: String, snapshot: Dictionary) -> void:
+	if room_code != game_store.room_code:
+		return
+	_apply_room_snapshot(snapshot)
+	error_label.text = ""
+
+
+func _on_room_socket_error(message: String) -> void:
+	show_error(message)
+
+
+func _on_create_room_pressed() -> void:
+	if game_store.has_active_room():
+		show_error("Leave the current room before creating a new one.")
+		return
+	error_label.text = ""
+	api_client.create_room()
+
+
+func _on_join_seat_pressed(seat_index: int) -> void:
+	if game_store.has_active_room():
+		show_error("Already joined a room.")
+		return
+	var room_code := room_code_input.text.strip_edges().to_upper()
+	if room_code.is_empty():
+		show_error("Enter a room code before joining a seat.")
+		return
+	error_label.text = ""
+	api_client.join_room(room_code, seat_index)
+
+
+func _on_start_room_pressed() -> void:
+	if not game_store.has_active_room():
+		show_error("Join a room before starting.")
+		return
+	error_label.text = ""
+	api_client.start_room(game_store.room_code, game_store.seat_token)
+
+
+func _on_leave_room_pressed() -> void:
+	if not game_store.has_active_room():
+		show_error("No active room to leave.")
+		return
+	error_label.text = ""
+	api_client.leave_room(game_store.room_code, game_store.seat_token)
 
 
 func _on_create_game_pressed() -> void:
@@ -226,7 +324,7 @@ func _on_refresh_pressed() -> void:
 		return
 
 	error_label.text = ""
-	api_client.get_snapshot(game_store.game_id, game_store.selected_viewer)
+	api_client.get_snapshot(game_store.game_id, game_store.selected_viewer, game_store.seat_token)
 
 
 func _on_grand_tichu_pressed(declare: bool) -> void:
@@ -236,9 +334,17 @@ func _on_grand_tichu_pressed(declare: bool) -> void:
 	if not game_store.available_actions.get("can_declare_grand_tichu", false):
 		show_error("Grand Tichu is not available right now.")
 		return
+	if not _ensure_live_action_socket():
+		return
 
 	error_label.text = ""
-	api_client.submit_grand_tichu(game_store.game_id, game_store.selected_actor, declare)
+	api_client.send_action(
+		"grand_tichu",
+		{
+			"player_index": game_store.selected_actor,
+			"declare": declare,
+		}
+	)
 
 
 func _on_submit_exchange_pressed() -> void:
@@ -254,14 +360,18 @@ func _on_submit_exchange_pressed() -> void:
 	if pending_exchange_cards.size() != 3:
 		show_error("Select exactly 3 cards for left, team, right.")
 		return
+	if not _ensure_live_action_socket():
+		return
 
 	error_label.text = ""
-	api_client.submit_exchange(
-		game_store.game_id,
-		game_store.selected_actor,
-		pending_exchange_cards[0],
-		pending_exchange_cards[1],
-		pending_exchange_cards[2]
+	api_client.send_action(
+		"exchange",
+		{
+			"player_index": game_store.selected_actor,
+			"to_left": pending_exchange_cards[0],
+			"to_team": pending_exchange_cards[1],
+			"to_right": pending_exchange_cards[2],
+		}
 	)
 
 
@@ -278,9 +388,16 @@ func _on_small_tichu_pressed() -> void:
 	if not game_store.available_actions.get("can_declare_small_tichu", false):
 		show_error("Small Tichu is not available right now.")
 		return
+	if not _ensure_live_action_socket():
+		return
 
 	error_label.text = ""
-	api_client.submit_small_tichu(game_store.game_id, game_store.selected_actor)
+	api_client.send_action(
+		"small_tichu",
+		{
+			"player_index": game_store.selected_actor,
+		}
+	)
 
 
 func _on_play_pressed() -> void:
@@ -299,13 +416,17 @@ func _on_play_pressed() -> void:
 	if not game_store.play_preview.get("can_submit_play", false):
 		show_error(str(game_store.play_preview.get("message", "Selected cards cannot be played right now.")))
 		return
+	if not _ensure_live_action_socket():
+		return
 
 	error_label.text = ""
-	api_client.submit_play(
-		game_store.game_id,
-		game_store.selected_actor,
-		pending_play_cards,
-		_selected_call_rank_payload()
+	api_client.send_action(
+		"play",
+		{
+			"player_index": game_store.selected_actor,
+			"cards": pending_play_cards,
+			"call_rank": _selected_call_rank_payload(),
+		}
 	)
 
 
@@ -316,9 +437,16 @@ func _on_pass_pressed() -> void:
 	if not game_store.available_actions.get("can_pass", false):
 		show_error("Pass is not available right now.")
 		return
+	if not _ensure_live_action_socket():
+		return
 
 	error_label.text = ""
-	api_client.submit_pass(game_store.game_id, game_store.selected_actor)
+	api_client.send_action(
+		"pass",
+		{
+			"player_index": game_store.selected_actor,
+		}
+	)
 
 
 func _on_clear_play_selection_pressed() -> void:
@@ -345,9 +473,17 @@ func _on_dragon_recipient_pressed(recipient_index: int) -> void:
 	if not _is_opponent_of(int(winner_index), recipient_index):
 		show_error("Dragon recipient must be on the opposing team.")
 		return
+	if not _ensure_live_action_socket():
+		return
 
 	error_label.text = ""
-	api_client.submit_dragon_recipient(game_store.game_id, game_store.selected_actor, recipient_index)
+	api_client.send_action(
+		"dragon_recipient",
+		{
+			"player_index": game_store.selected_actor,
+			"recipient_index": recipient_index,
+		}
+	)
 
 
 func _on_legal_plays_received(success: bool, game_id: String, viewer: int, payload: Dictionary) -> void:
@@ -448,22 +584,33 @@ func _render_table_info(table_state: Dictionary) -> void:
 
 func render_buttons(actions: Dictionary) -> void:
 	refresh_button.disabled = not game_store.has_active_game()
-	pass_button.disabled = not (game_store.has_active_game() and actions.get("can_pass", false) == true)
+	var live_game_socket: bool = api_client.is_socket_connected_for(game_store.game_id, game_store.selected_viewer)
+	pass_button.disabled = not (game_store.has_active_game() and live_game_socket and actions.get("can_pass", false) == true)
 	play_button.disabled = not (
 		game_store.has_active_game()
+		and live_game_socket
 		and actions.get("can_play", false) == true
 		and not pending_play_cards.is_empty()
 		and not play_preview_loading
 		and game_store.play_preview.get("can_submit_play", false) == true
 	)
-	small_tichu_button.disabled = not (game_store.has_active_game() and actions.get("can_declare_small_tichu", false) == true)
+	small_tichu_button.disabled = not (
+		game_store.has_active_game()
+		and live_game_socket
+		and actions.get("can_declare_small_tichu", false) == true
+	)
 
-	var can_grand_tichu: bool = game_store.has_active_game() and actions.get("can_declare_grand_tichu", false) == true
+	var can_grand_tichu: bool = (
+		game_store.has_active_game()
+		and live_game_socket
+		and actions.get("can_declare_grand_tichu", false) == true
+	)
 	grand_tichu_yes_button.disabled = not can_grand_tichu
 	grand_tichu_no_button.disabled = not can_grand_tichu
 
 	var can_exchange: bool = (
 		game_store.has_active_game()
+		and live_game_socket
 		and game_store.phase == "prepare_exchange"
 		and game_store.selected_actor == game_store.selected_viewer
 	)
@@ -717,21 +864,139 @@ func _update_status_label() -> void:
 	status_label.text = "%s | %s" % [http_status_message, socket_status_message]
 
 
-func _apply_action_response(payload: Dictionary) -> void:
-	if _should_apply_http_action_response():
-		game_store.apply_snapshot(payload)
-		render_snapshot(payload)
+func _apply_room_identity(payload: Dictionary) -> void:
+	game_store.set_multiplayer_identity(
+		str(payload.get("room_code", "")),
+		int(payload.get("seat_index", -1)),
+		str(payload.get("seat_token", ""))
+	)
+	room_code_input.text = game_store.room_code
+	_save_multiplayer_session()
+
+
+func _apply_room_snapshot(snapshot: Dictionary) -> void:
+	if typeof(snapshot) != TYPE_DICTIONARY or snapshot.is_empty():
+		return
+	game_store.apply_room_snapshot(snapshot)
+	_update_room_ui()
+	if game_store.room_status == "in_game" and not game_store.game_id.is_empty():
+		_resume_room_or_game_socket()
+	else:
+		control_section.visible = false
+		content_row.visible = false
+		effects_section.visible = false
+
+
+func _resume_room_or_game_socket() -> void:
+	if not game_store.has_active_room():
+		return
+	if game_store.room_status == "lobby":
+		api_client.connect_room_socket(game_store.room_code, game_store.seat_token)
+		control_section.visible = false
+		content_row.visible = false
+		effects_section.visible = false
 		return
 
-	render_buttons(game_store.available_actions)
-	_render_hand_cards(game_store.state.get("viewer_hand", []))
-	_update_play_selection_label()
+	if game_store.room_status == "in_game" or game_store.room_status == "finished":
+		api_client.connect_game_socket(game_store.game_id, game_store.selected_viewer, game_store.seat_token)
+		api_client.get_snapshot(game_store.game_id, game_store.selected_viewer, game_store.seat_token)
+		control_section.visible = true
+		content_row.visible = true
+		effects_section.visible = true
 
 
-func _should_apply_http_action_response() -> bool:
-	if not game_store.has_active_game():
+func _update_room_ui() -> void:
+	if not game_store.has_active_room():
+		room_status_label.text = "Room: -"
+		start_room_button.disabled = true
+		leave_room_button.disabled = true
+		for seat_index in range(seat_buttons.size()):
+			seat_buttons[seat_index].text = "Seat %d" % seat_index
+			seat_buttons[seat_index].disabled = false
+		return
+
+	var snapshot: Dictionary = game_store.room_snapshot
+	var seats: Array = snapshot.get("seats", [])
+	room_status_label.text = "Room %s | Status %s | Seat %d" % [
+		game_store.room_code,
+		game_store.room_status,
+		game_store.my_seat_index,
+	]
+	start_room_button.disabled = not bool(snapshot.get("can_start", false))
+	leave_room_button.disabled = game_store.room_status != "lobby"
+	for seat_index in range(seat_buttons.size()):
+		var seat_data: Dictionary = seats[seat_index] if seat_index < seats.size() else {}
+		var claimed := bool(seat_data.get("claimed", false))
+		var connected := bool(seat_data.get("connected", false))
+		var mine: bool = seat_index == game_store.my_seat_index
+		var status_text := "open"
+		if claimed:
+			status_text = "connected" if connected else "claimed"
+		seat_buttons[seat_index].text = "Seat %d | %s%s" % [
+			seat_index,
+			status_text,
+			" | me" if mine else "",
+		]
+		seat_buttons[seat_index].disabled = claimed or game_store.room_status != "lobby" or mine
+
+
+func _save_multiplayer_session() -> void:
+	if not game_store.has_active_room():
+		return
+	var config := ConfigFile.new()
+	config.set_value("session", "room_code", game_store.room_code)
+	config.set_value("session", "seat_index", game_store.my_seat_index)
+	config.set_value("session", "seat_token", game_store.seat_token)
+	config.save(SESSION_SAVE_PATH)
+
+
+func _clear_saved_session() -> void:
+	var dir := DirAccess.open("user://")
+	if dir != null and dir.file_exists("multiplayer_session.cfg"):
+		dir.remove("multiplayer_session.cfg")
+
+
+func _try_restore_saved_session() -> void:
+	var config := ConfigFile.new()
+	var load_error := config.load(SESSION_SAVE_PATH)
+	if load_error != OK:
+		return
+	var room_code := str(config.get_value("session", "room_code", ""))
+	var seat_token := str(config.get_value("session", "seat_token", ""))
+	if room_code.is_empty() or seat_token.is_empty():
+		_clear_saved_session()
+		return
+	restoring_session = true
+	room_code_input.text = room_code
+	api_client.get_room_state(room_code, seat_token)
+
+
+func _clear_room_runtime() -> void:
+	game_store.clear_multiplayer_identity()
+	room_code_input.text = ""
+	recent_effect_lines.clear()
+	_render_effects()
+	phase_label.text = "Phase: -"
+	turn_label.text = "Turn: -"
+	game_info_label.text = "Scores: - | Round: -"
+	control_section.visible = false
+	content_row.visible = false
+	effects_section.visible = false
+	_render_hand_cards([])
+	_render_cards(table_container, [])
+	_render_round_result({})
+	_render_players_summary([])
+	_render_players_out_order([])
+	_render_dragon_recipient_options({})
+	_update_room_ui()
+	_clear_saved_session()
+
+
+func _ensure_live_action_socket() -> bool:
+	if api_client.is_socket_connected_for(game_store.game_id, game_store.selected_viewer):
 		return true
-	return not api_client.is_socket_connected_for(game_store.game_id, game_store.selected_viewer)
+	show_error("Live socket is not connected for the selected viewer.")
+	return false
 
 
 func _on_hand_card_pressed(card_data: Dictionary) -> void:
@@ -868,7 +1133,7 @@ func _sync_legal_plays(snapshot: Dictionary) -> void:
 	game_store.clear_legal_plays()
 	legal_plays_loading = true
 	legal_plays_error = ""
-	api_client.get_legal_plays(game_store.game_id, game_store.selected_viewer)
+	api_client.get_legal_plays(game_store.game_id, game_store.selected_viewer, game_store.seat_token)
 
 
 func _sync_play_preview() -> void:
@@ -888,7 +1153,8 @@ func _sync_play_preview() -> void:
 		game_store.selected_viewer,
 		pending_play_cards,
 		_selected_call_rank_payload(),
-		play_preview_request_id
+		play_preview_request_id,
+		game_store.seat_token
 	)
 
 

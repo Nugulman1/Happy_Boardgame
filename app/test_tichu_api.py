@@ -1,11 +1,31 @@
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from app.main import app
-from app.tichu_api import _sessions, reset_sessions
+from app.tichu_api import _sessions, _socket_manager, reset_sessions
 from tichu import Card, new_round_state
 
 
 client = TestClient(app)
+
+
+def _create_room() -> tuple[str, str]:
+    response = client.post("/rooms/tichu")
+    assert response.status_code == 201
+    payload = response.json()
+    return payload["room_code"], payload["seat_token"]
+
+
+def _join_room(room_code: str, seat_index: int) -> str:
+    response = client.post(f"/rooms/{room_code}/join", json={"seat_index": seat_index})
+    assert response.status_code == 200
+    return response.json()["seat_token"]
+
+
+def _start_room(room_code: str, seat_token: str) -> dict:
+    response = client.post(f"/rooms/{room_code}/start", params={"seat_token": seat_token})
+    assert response.status_code == 200
+    return response.json()
 
 
 def _create_game() -> str:
@@ -27,6 +47,24 @@ def _receive_socket_snapshot(websocket) -> dict:
     payload = websocket.receive_json()
     assert payload["type"] == "snapshot"
     return payload["snapshot"]
+
+
+def _receive_socket_action_result(websocket) -> dict:
+    payload = websocket.receive_json()
+    assert payload["type"] == "action_result"
+    return payload
+
+
+def _receive_socket_action_error(websocket) -> dict:
+    payload = websocket.receive_json()
+    assert payload["type"] == "action_error"
+    return payload
+
+
+def _receive_room_snapshot(websocket) -> dict:
+    payload = websocket.receive_json()
+    assert payload["type"] == "room_snapshot"
+    return payload["room_snapshot"]
 
 
 def _prepare_to_trick_phase(game_id: str) -> dict:
@@ -356,6 +394,258 @@ def test_websocket_reconnect_receives_latest_snapshot() -> None:
         assert not latest_snapshot["available_actions"]["can_declare_grand_tichu"]
         assert "effects" not in latest_snapshot
     print("websocket reconnect snapshot OK")
+
+
+def test_websocket_action_result_and_snapshot_broadcast() -> None:
+    reset_sessions()
+    game_id = _create_game()
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as viewer_zero_socket:
+        with client.websocket_connect(f"/ws/games/{game_id}?viewer=1") as viewer_one_socket:
+            _receive_socket_snapshot(viewer_zero_socket)
+            _receive_socket_snapshot(viewer_one_socket)
+
+            viewer_zero_socket.send_json(
+                {
+                    "type": "action",
+                    "request_id": 7,
+                    "action": "grand_tichu",
+                    "payload": {"player_index": 0, "declare": False},
+                }
+            )
+
+            result_payload = _receive_socket_action_result(viewer_zero_socket)
+            assert result_payload["request_id"] == 7
+            assert result_payload["action"] == "grand_tichu"
+            assert result_payload["ok"] is True
+            assert result_payload["effects"][0]["type"] == "grand_tichu_declared"
+
+            updated_zero = _receive_socket_snapshot(viewer_zero_socket)
+            updated_one = _receive_socket_snapshot(viewer_one_socket)
+
+            assert updated_zero["effects"][0]["type"] == "grand_tichu_declared"
+            assert updated_one["effects"][0]["type"] == "grand_tichu_declared"
+            assert not updated_zero["available_actions"]["can_declare_grand_tichu"]
+    print("websocket action result and broadcast OK")
+
+
+def test_websocket_action_error_for_invalid_messages() -> None:
+    reset_sessions()
+    game_id = _create_game()
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as websocket:
+        _receive_socket_snapshot(websocket)
+
+        websocket.send_json(
+            {
+                "type": "action",
+                "request_id": 11,
+                "action": "unknown",
+                "payload": {"player_index": 0},
+            }
+        )
+        invalid_action = _receive_socket_action_error(websocket)
+        assert invalid_action["request_id"] == 11
+        assert invalid_action["action"] == "unknown"
+        assert invalid_action["error"]["code"] == "INVALID_ACTION"
+
+        websocket.send_json(
+            {
+                "type": "action",
+                "request_id": 12,
+                "action": "pass",
+                "payload": {},
+            }
+        )
+        invalid_payload = _receive_socket_action_error(websocket)
+        assert invalid_payload["request_id"] == 12
+        assert invalid_payload["action"] == "pass"
+        assert invalid_payload["error"]["code"] == "INVALID_REQUEST"
+
+        websocket.send_json(
+            {
+                "type": "action",
+                "request_id": 13,
+                "action": "pass",
+                "payload": {"player_index": 0},
+            }
+        )
+        invalid_phase = _receive_socket_action_error(websocket)
+        assert invalid_phase["request_id"] == 13
+        assert invalid_phase["action"] == "pass"
+        assert invalid_phase["error"]["code"] == "INVALID_PHASE"
+    print("websocket action error handling OK")
+
+
+def test_websocket_replaces_existing_connection_for_same_viewer() -> None:
+    reset_sessions()
+    game_id = _create_game()
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as first_socket:
+        first_snapshot = _receive_socket_snapshot(first_socket)
+        assert first_snapshot["viewer"] == 0
+
+        with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as second_socket:
+            second_snapshot = _receive_socket_snapshot(second_socket)
+            assert second_snapshot["viewer"] == 0
+            assert list(_socket_manager._connections[game_id].keys()) == [0]
+
+            try:
+                first_socket.receive_json()
+                assert False, "expected the older socket to be closed"
+            except WebSocketDisconnect as exc:
+                assert exc.code == 1000
+
+            response = client.post(
+                f"/games/{game_id}/prepare/grand-tichu",
+                json={"player_index": 0, "declare": False},
+            )
+            assert response.status_code == 200
+
+            updated_snapshot = _receive_socket_snapshot(second_socket)
+            assert updated_snapshot["effects"][0]["type"] == "grand_tichu_declared"
+
+    assert game_id not in _socket_manager._connections
+    print("websocket replace existing viewer connection OK")
+
+
+def test_room_lobby_flow_and_start_auth() -> None:
+    reset_sessions()
+    room_code, host_token = _create_room()
+
+    room_payload = client.get(f"/rooms/{room_code}", params={"seat_token": host_token})
+    assert room_payload.status_code == 200
+    assert room_payload.json()["room_snapshot"]["my_seat_index"] == 0
+    assert room_payload.json()["room_snapshot"]["seats"][0]["claimed"]
+    assert not room_payload.json()["room_snapshot"]["can_start"]
+
+    taken_seat = client.post(f"/rooms/{room_code}/join", json={"seat_index": 0})
+    assert taken_seat.status_code == 409
+
+    seat_one_token = _join_room(room_code, 1)
+    not_ready = client.post(f"/rooms/{room_code}/start", params={"seat_token": host_token})
+    assert not_ready.status_code == 409
+    not_host = client.post(f"/rooms/{room_code}/start", params={"seat_token": seat_one_token})
+    assert not_host.status_code == 403
+
+    _join_room(room_code, 2)
+    _join_room(room_code, 3)
+    started = _start_room(room_code, host_token)
+    room_snapshot = started["room_snapshot"]
+    assert room_snapshot["status"] == "in_game"
+    assert room_snapshot["game_id"]
+
+    game_id = room_snapshot["game_id"]
+    session = _sessions[game_id]
+    assert session.seat_tokens_by_player is not None
+    assert session.seat_tokens_by_player[0] == host_token
+    assert session.seat_tokens_by_player[1] == seat_one_token
+    print("room lobby/start auth OK")
+
+
+def test_room_leave_and_socket_reconnect() -> None:
+    reset_sessions()
+    room_code, host_token = _create_room()
+    seat_one_token = _join_room(room_code, 1)
+
+    with client.websocket_connect(f"/ws/rooms/{room_code}?seat_token={host_token}") as room_socket:
+        initial_snapshot = _receive_room_snapshot(room_socket)
+        assert initial_snapshot["status"] == "lobby"
+
+    with client.websocket_connect(f"/ws/rooms/{room_code}?seat_token={host_token}") as room_socket:
+        reconnected_snapshot = _receive_room_snapshot(room_socket)
+        assert reconnected_snapshot["status"] == "lobby"
+        assert reconnected_snapshot["my_seat_index"] == 0
+
+    leave_response = client.post(f"/rooms/{room_code}/leave", params={"seat_token": seat_one_token})
+    assert leave_response.status_code == 200
+    assert not leave_response.json()["room_closed"]
+    assert not leave_response.json()["room_snapshot"]["seats"][1]["claimed"]
+
+    close_room = client.post(f"/rooms/{room_code}/leave", params={"seat_token": host_token})
+    assert close_room.status_code == 200
+    assert close_room.json()["room_closed"]
+
+    missing_room = client.get(f"/rooms/{room_code}", params={"seat_token": host_token})
+    assert missing_room.status_code == 404
+    print("room leave/reconnect OK")
+
+
+def test_room_backed_game_requires_matching_seat_token() -> None:
+    reset_sessions()
+    room_code, host_token = _create_room()
+    seat_one_token = _join_room(room_code, 1)
+    _join_room(room_code, 2)
+    _join_room(room_code, 3)
+    started = _start_room(room_code, host_token)
+    game_id = started["room_snapshot"]["game_id"]
+
+    good_snapshot = client.get(f"/games/{game_id}", params={"viewer": 1, "seat_token": seat_one_token})
+    assert good_snapshot.status_code == 200
+
+    wrong_viewer = client.get(f"/games/{game_id}", params={"viewer": 0, "seat_token": seat_one_token})
+    assert wrong_viewer.status_code == 403
+
+    wrong_action = client.post(
+        f"/games/{game_id}/prepare/grand-tichu",
+        params={"seat_token": seat_one_token},
+        json={"player_index": 0, "declare": False},
+    )
+    assert wrong_action.status_code == 403
+
+    with client.websocket_connect(
+        f"/ws/games/{game_id}?viewer=1&seat_token={seat_one_token}"
+    ) as websocket:
+        initial_snapshot = _receive_socket_snapshot(websocket)
+        assert initial_snapshot["viewer"] == 1
+
+        websocket.send_json(
+            {
+                "type": "action",
+                "request_id": 21,
+                "action": "grand_tichu",
+                "payload": {"player_index": 0, "declare": False},
+            }
+        )
+        mismatch = _receive_socket_action_error(websocket)
+        assert mismatch["error"]["code"] == "SEAT_TOKEN_MISMATCH"
+
+    try:
+        with client.websocket_connect(
+            f"/ws/games/{game_id}?viewer=0&seat_token={seat_one_token}"
+        ) as invalid_socket:
+            invalid_socket.receive_json()
+            assert False, "expected unauthorized socket to be closed"
+    except WebSocketDisconnect as exc:
+        assert exc.code == 1008
+    print("room-backed game auth OK")
+
+
+def test_room_backed_game_socket_reconnect_uses_seat_token() -> None:
+    reset_sessions()
+    room_code, host_token = _create_room()
+    _join_room(room_code, 1)
+    _join_room(room_code, 2)
+    _join_room(room_code, 3)
+    started = _start_room(room_code, host_token)
+    game_id = started["room_snapshot"]["game_id"]
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0&seat_token={host_token}") as first_socket:
+        initial_snapshot = _receive_socket_snapshot(first_socket)
+        assert initial_snapshot["available_actions"]["can_declare_grand_tichu"]
+
+    response = client.post(
+        f"/games/{game_id}/prepare/grand-tichu",
+        params={"seat_token": host_token},
+        json={"player_index": 0, "declare": False},
+    )
+    assert response.status_code == 200
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0&seat_token={host_token}") as second_socket:
+        latest_snapshot = _receive_socket_snapshot(second_socket)
+        assert not latest_snapshot["available_actions"]["can_declare_grand_tichu"]
+        assert "effects" not in latest_snapshot
+    print("room-backed game reconnect OK")
 
 
 def test_small_tichu_play_and_pass_flow() -> None:

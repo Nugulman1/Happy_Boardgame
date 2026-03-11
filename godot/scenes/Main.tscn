@@ -62,6 +62,66 @@ text = ""
 modulate = Color(0.85, 0.2, 0.2, 1)
 autowrap_mode = 3
 
+[node name="LobbySection" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LobbyTitleLabel" type="Label" parent="RootLayout/LobbySection"]
+layout_mode = 2
+text = "Multiplayer Lobby"
+
+[node name="RoomStatusLabel" type="Label" parent="RootLayout/LobbySection"]
+layout_mode = 2
+text = "Room: -"
+autowrap_mode = 3
+
+[node name="RoomControlsRow" type="HBoxContainer" parent="RootLayout/LobbySection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RoomCodeLabel" type="Label" parent="RootLayout/LobbySection/RoomControlsRow"]
+layout_mode = 2
+text = "Room Code"
+
+[node name="RoomCodeInput" type="LineEdit" parent="RootLayout/LobbySection/RoomControlsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter room code"
+
+[node name="CreateRoomButton" type="Button" parent="RootLayout/LobbySection/RoomControlsRow"]
+layout_mode = 2
+text = "Create Room"
+
+[node name="StartRoomButton" type="Button" parent="RootLayout/LobbySection/RoomControlsRow"]
+layout_mode = 2
+text = "Start Room"
+disabled = true
+
+[node name="LeaveRoomButton" type="Button" parent="RootLayout/LobbySection/RoomControlsRow"]
+layout_mode = 2
+text = "Leave Room"
+disabled = true
+
+[node name="SeatRow" type="HBoxContainer" parent="RootLayout/LobbySection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Seat0Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+layout_mode = 2
+text = "Seat 0"
+
+[node name="Seat1Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+layout_mode = 2
+text = "Seat 1"
+
+[node name="Seat2Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+layout_mode = 2
+text = "Seat 2"
+
+[node name="Seat3Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+layout_mode = 2
+text = "Seat 3"
+
 [node name="ControlSection" type="VBoxContainer" parent="RootLayout"]
 layout_mode = 2
 theme_override_constants/separation = 8
