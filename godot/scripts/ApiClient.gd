@@ -11,8 +11,67 @@ signal pass_submitted(success: bool, payload: Dictionary)
 signal dragon_recipient_submitted(success: bool, payload: Dictionary)
 signal legal_plays_received(success: bool, game_id: String, viewer: int, payload: Dictionary)
 signal play_preview_received(success: bool, game_id: String, viewer: int, request_id: int, payload: Dictionary)
+signal socket_snapshot_received(game_id: String, viewer: int, snapshot: Dictionary)
+signal socket_connection_changed(connected: bool, message: String)
 
 const BASE_URL := "http://127.0.0.1:8000"
+
+var socket_peer: WebSocketPeer = null
+var socket_game_id := ""
+var socket_viewer := -1
+var socket_state := WebSocketPeer.STATE_CLOSED
+
+
+func _ready() -> void:
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	if socket_peer == null:
+		return
+
+	var poll_error := socket_peer.poll()
+	if poll_error != OK:
+		_clear_socket_state()
+		socket_connection_changed.emit(false, "Live: socket poll failed")
+		return
+
+	var ready_state := socket_peer.get_ready_state()
+	if ready_state != socket_state:
+		socket_state = ready_state
+		match ready_state:
+			WebSocketPeer.STATE_CONNECTING:
+				socket_connection_changed.emit(false, "Live: connecting...")
+			WebSocketPeer.STATE_OPEN:
+				socket_connection_changed.emit(true, "Live: connected")
+			WebSocketPeer.STATE_CLOSING:
+				socket_connection_changed.emit(false, "Live: closing...")
+			WebSocketPeer.STATE_CLOSED:
+				_clear_socket_state()
+				socket_connection_changed.emit(false, "Live: disconnected")
+				return
+
+	if ready_state != WebSocketPeer.STATE_OPEN:
+		return
+
+	while socket_peer.get_available_packet_count() > 0:
+		var text := socket_peer.get_packet().get_string_from_utf8()
+		var parsed = JSON.parse_string(text)
+		if typeof(parsed) != TYPE_DICTIONARY:
+			continue
+
+		var payload: Dictionary = parsed
+		if str(payload.get("type", "")) != "snapshot":
+			continue
+
+		var snapshot = payload.get("snapshot", {})
+		if typeof(snapshot) != TYPE_DICTIONARY:
+			continue
+		socket_snapshot_received.emit(
+			str(payload.get("game_id", socket_game_id)),
+			int(payload.get("viewer", socket_viewer)),
+			snapshot
+		)
 
 
 func check_health() -> void:
@@ -28,6 +87,43 @@ func create_game() -> void:
 func get_snapshot(game_id: String, viewer: int) -> void:
 	var payload := await _request_json("/games/%s?viewer=%d" % [game_id, viewer], HTTPClient.METHOD_GET)
 	snapshot_received.emit(not payload.has("error"), payload)
+
+
+func connect_game_socket(game_id: String, viewer: int) -> void:
+	disconnect_game_socket(false)
+
+	socket_peer = WebSocketPeer.new()
+	socket_game_id = game_id
+	socket_viewer = viewer
+	socket_state = WebSocketPeer.STATE_CONNECTING
+
+	var socket_url := "%s/ws/games/%s?viewer=%d" % [_websocket_base_url(), game_id, viewer]
+	var connect_error := socket_peer.connect_to_url(socket_url)
+	if connect_error != OK:
+		_clear_socket_state()
+		socket_connection_changed.emit(false, "Live: connect failed")
+		return
+
+	socket_connection_changed.emit(false, "Live: connecting...")
+
+
+func disconnect_game_socket(notify: bool = true) -> void:
+	if socket_peer != null:
+		var ready_state := socket_peer.get_ready_state()
+		if ready_state == WebSocketPeer.STATE_OPEN or ready_state == WebSocketPeer.STATE_CONNECTING:
+			socket_peer.close()
+
+	_clear_socket_state()
+	if notify:
+		socket_connection_changed.emit(false, "Live: disconnected")
+
+
+func is_socket_connected() -> bool:
+	return socket_peer != null and socket_peer.get_ready_state() == WebSocketPeer.STATE_OPEN
+
+
+func is_socket_connected_for(game_id: String, viewer: int) -> bool:
+	return is_socket_connected() and socket_game_id == game_id and socket_viewer == viewer
 
 
 func get_legal_plays(game_id: String, viewer: int) -> void:
@@ -173,3 +269,16 @@ func _request_json(path: String, method: HTTPClient.Method, body: String = "") -
 				"message": "request failed with status %d" % response_code,
 			}
 	return payload
+
+
+func _clear_socket_state() -> void:
+	socket_peer = null
+	socket_game_id = ""
+	socket_viewer = -1
+	socket_state = WebSocketPeer.STATE_CLOSED
+
+
+func _websocket_base_url() -> String:
+	var socket_base := BASE_URL.replace("http://", "ws://")
+	socket_base = socket_base.replace("https://", "wss://")
+	return socket_base

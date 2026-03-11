@@ -23,6 +23,12 @@ def _get_state(game_id: str, viewer: int) -> dict:
     return response.json()
 
 
+def _receive_socket_snapshot(websocket) -> dict:
+    payload = websocket.receive_json()
+    assert payload["type"] == "snapshot"
+    return payload["snapshot"]
+
+
 def _prepare_to_trick_phase(game_id: str) -> dict:
     for player_index in range(4):
         response = client.post(
@@ -170,21 +176,6 @@ def test_viewer_serialization_and_helper_endpoints() -> None:
     assert not other_view["available_actions"]["is_my_turn"]
     assert current_view["state"]["viewer_hand"] != other_view["state"]["viewer_hand"]
 
-    preview = client.post(
-        f"/games/{game_id}/preview-combo",
-        json={"viewer": current_player, "cards": [current_hand[0]]},
-    )
-    assert preview.status_code == 200
-    assert preview.json()["is_legal_shape"]
-    assert preview.json()["combo_type"] == "single"
-
-    invalid_preview = client.post(
-        f"/games/{game_id}/preview-combo",
-        json={"viewer": current_player, "cards": [current_hand[0], current_hand[1]]},
-    )
-    assert invalid_preview.status_code == 200
-    assert not invalid_preview.json()["is_legal_shape"]
-
     legal = client.get(f"/games/{game_id}/legal-plays", params={"viewer": current_player})
     assert legal.status_code == 200
     assert isinstance(legal.json()["plays"], list)
@@ -314,6 +305,57 @@ def test_play_preview_allows_valid_mahjong_call_on_opening_play() -> None:
     assert payload.json()["can_submit_play"]
     assert payload.json()["reason_code"] == "OK"
     print("play preview opening mahjong call OK")
+
+
+def test_websocket_initial_snapshot_and_action_broadcast() -> None:
+    reset_sessions()
+    game_id = _create_game()
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as viewer_zero_socket:
+        with client.websocket_connect(f"/ws/games/{game_id}?viewer=1") as viewer_one_socket:
+            initial_zero = _receive_socket_snapshot(viewer_zero_socket)
+            initial_one = _receive_socket_snapshot(viewer_one_socket)
+
+            assert initial_zero["viewer"] == 0
+            assert initial_one["viewer"] == 1
+            assert initial_zero["state"]["viewer_hand"] != initial_one["state"]["viewer_hand"]
+
+            response = client.post(
+                f"/games/{game_id}/prepare/grand-tichu",
+                json={"player_index": 0, "declare": False},
+            )
+            assert response.status_code == 200
+
+            updated_zero = _receive_socket_snapshot(viewer_zero_socket)
+            updated_one = _receive_socket_snapshot(viewer_one_socket)
+
+            assert updated_zero["viewer"] == 0
+            assert updated_one["viewer"] == 1
+            assert updated_zero["effects"][0]["type"] == "grand_tichu_declared"
+            assert updated_one["effects"][0]["type"] == "grand_tichu_declared"
+            assert updated_zero["state"]["viewer_hand"] != updated_one["state"]["viewer_hand"]
+    print("websocket snapshot/broadcast OK")
+
+
+def test_websocket_reconnect_receives_latest_snapshot() -> None:
+    reset_sessions()
+    game_id = _create_game()
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as first_socket:
+        initial_snapshot = _receive_socket_snapshot(first_socket)
+        assert initial_snapshot["available_actions"]["can_declare_grand_tichu"]
+
+    response = client.post(
+        f"/games/{game_id}/prepare/grand-tichu",
+        json={"player_index": 0, "declare": False},
+    )
+    assert response.status_code == 200
+
+    with client.websocket_connect(f"/ws/games/{game_id}?viewer=0") as second_socket:
+        latest_snapshot = _receive_socket_snapshot(second_socket)
+        assert not latest_snapshot["available_actions"]["can_declare_grand_tichu"]
+        assert "effects" not in latest_snapshot
+    print("websocket reconnect snapshot OK")
 
 
 def test_small_tichu_play_and_pass_flow() -> None:
@@ -514,7 +556,11 @@ def main() -> None:
     test_viewer_serialization_and_helper_endpoints()
     test_play_preview_endpoint()
     test_play_preview_respects_mahjong_call()
+    test_play_preview_allows_valid_mahjong_call_on_opening_play()
+    test_websocket_initial_snapshot_and_action_broadcast()
+    test_websocket_reconnect_receives_latest_snapshot()
     test_small_tichu_play_and_pass_flow()
+    test_grand_tichu_declarer_cannot_declare_small_tichu()
     test_dragon_recipient_flow()
     test_round_finish_auto_next_round_flow()
     test_auto_game_over()

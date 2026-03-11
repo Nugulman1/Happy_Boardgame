@@ -7,16 +7,18 @@
 
 ## 최우선
 
+- socket 실험
+  - viewer 전환 중 중복 연결/기존 연결 정리 동작 점검
+  - 액션 HTTP 응답과 WebSocket push의 중복 반영 없는지 확인
+  - 연결 끊김/재연결 시 최신 snapshot 복구 흐름 점검
+  - Godot에서 실제 장시간 실행 시 소켓 상태 표시와 helper API 동작 같이 확인
 - WebSocket 전환
-  - 현재 Godot는 모든 상태 갱신을 HTTP 요청/응답과 수동 새로고침에 의존한다.
-  - `game_id` 단위 브로드캐스트, 액션 결과 push, 연결 끊김 후 재동기화 규칙을 먼저 정리하기
-  - 기존 snapshot/effects 포맷을 최대한 재사용해 WebSocket 이벤트 스키마를 맞추기
+  - 현재는 하이브리드(WebSocket push + HTTP action)까지 연결됐다.
+  - 액션을 WebSocket으로 올릴지, helper API를 유지할지 다음 단계 방향 정리
+  - reconnect/backoff, 연결 상태 표시, viewer 고정 정책을 실제 사용 기준으로 다듬기
 - 멀티플레이 세션 계층 설계
   - viewer 고정 클라이언트 기준으로 actor 테스트 UI를 어떻게 대체할지 정리
   - 방 입장, 재접속, 관전자 여부, 턴 주체 검증 책임을 HTTP/WebSocket 경계에서 정리
-- Godot에 `preview-combo` 보조 API 연결
-  - 현재는 `legal-plays`와 `play-preview`만 연결되어 있다.
-  - 선택 카드 족보 이름/폭탄 여부를 별도 패널이나 선택 카드 라벨에 보여주기
 - Godot helper UX 정리
   - 참새 콜 강제 상황에서 `legal-plays`와 `play-preview` 메시지를 더 직관적으로 노출
   - exchange 구간도 서버 계약 기반으로 활성/비활성 신호를 정리할지 결정
@@ -31,7 +33,6 @@
 - 에러 응답을 Godot UI/로그에 더 명확히 표시하는 흐름 보강
 - helper API 연동 후 선택 카드 UX 다듬기
   - 현재 선택 카드 하이라이트와 합법 조합 안내 정리
-  - `preview-combo`까지 붙인 뒤 표시 정보 중복을 정리
 
 ---
 
@@ -96,12 +97,21 @@
   - 자동 다음 라운드 / game over 전환
 - 보조 API 1차 구현
   - legal-plays
-  - preview-combo
   - play-preview
+- 하이브리드 WebSocket 전환 1차
+  - `WS /ws/games/{game_id}?viewer=...`
+  - `game_id -> viewer -> websocket` 메모리 연결 관리자
+  - HTTP 액션 성공 후 viewer별 snapshot 브로드캐스트
+  - Godot `WebSocketPeer` 연결/폴링과 snapshot 반영
+  - HTTP 액션 응답과 WebSocket push 중복 반영 방지
 - HTTP 기준 핵심 플레이 흐름 테스트 재검증
   - 새 게임 생성 → 준비 단계 → 스몰 티츄/플레이/패스 → 라운드 종료 → 다음 라운드
   - viewer별 직렬화 차이 점검
-  - `legal-plays`, `preview-combo`, `play-preview` 보조 API 점검
+  - `legal-plays`, `play-preview` 보조 API 점검
+- WebSocket 테스트 추가
+  - 초기 snapshot 수신
+  - 액션 broadcast
+  - reconnect 시 최신 snapshot 수신
 - Godot 1차 연동 최소 스펙 문서화
   - `docs/Godot_1차_연동_최소_스펙.md`
 - Godot 프로젝트 기본 구조 만들기
@@ -142,3 +152,7 @@
 - 시나리오 하네스 추가
   - `tichu/scenario_harness.py`
   - 고정 시나리오/CLI로 참새 콜, 용 수령자, 라운드 종료 직전 흐름 재현
+- 시나리오 하네스 예외상황 실험 추가
+  - `legal_plays()` 조회 지원
+  - 폭탄 예외상황, 참새 콜 강제 패스 차단, 봉황 포함 케이스 실험
+  - 결과 문서 `docs/예외상황 테스트.md`

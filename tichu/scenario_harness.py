@@ -13,6 +13,7 @@ from .session_service import (
     SessionActionError,
     combo_summary_payload,
     get_available_actions,
+    get_legal_plays_for_viewer,
     preview_play as preview_play_action,
     submit_dragon_recipient as submit_dragon_recipient_action,
     submit_pass as submit_pass_action,
@@ -154,6 +155,19 @@ class ScenarioHarness:
             "action": "available_actions",
             "viewer": resolved_viewer,
             "available_actions": snapshot["available_actions"],
+            "snapshot": snapshot,
+        }
+
+    def legal_plays(self, viewer: int | None = None) -> SummaryResult:
+        resolved_viewer = self.default_viewer if viewer is None else viewer
+        plays = get_legal_plays_for_viewer(self.session, resolved_viewer)
+        snapshot = snapshot_payload(self.session, resolved_viewer)
+        return {
+            "ok": True,
+            "scenario": self.name,
+            "action": "legal_plays",
+            "viewer": resolved_viewer,
+            "plays": [_cards_payload(cards) for cards in plays],
             "snapshot": snapshot,
         }
 

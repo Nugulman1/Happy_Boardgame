@@ -47,6 +47,8 @@ var play_preview_error := ""
 var play_preview_request_id := 0
 var selected_call_rank = null
 var recent_effect_lines: Array[String] = []
+var http_status_message := "Server: checking..."
+var socket_status_message := "Live: disconnected"
 
 
 func _ready() -> void:
@@ -66,6 +68,8 @@ func _ready() -> void:
 	api_client.dragon_recipient_submitted.connect(_on_dragon_recipient_submitted)
 	api_client.legal_plays_received.connect(_on_legal_plays_received)
 	api_client.play_preview_received.connect(_on_play_preview_received)
+	api_client.socket_snapshot_received.connect(_on_socket_snapshot_received)
+	api_client.socket_connection_changed.connect(_on_socket_connection_changed)
 
 	create_game_button.pressed.connect(_on_create_game_pressed)
 	refresh_button.pressed.connect(_on_refresh_pressed)
@@ -91,16 +95,24 @@ func _ready() -> void:
 	_render_cards(table_container, [])
 	_render_dragon_recipient_options({})
 	_render_round_result({})
+	_update_status_label()
 	api_client.check_health()
+
+
+func _exit_tree() -> void:
+	if api_client != null:
+		api_client.disconnect_game_socket(false)
 
 
 func _on_health_checked(success: bool, payload: Dictionary) -> void:
 	if success and payload.get("status", "") == "ok":
-		status_label.text = "Server: connected"
+		http_status_message = "Server: connected"
+		_update_status_label()
 		error_label.text = ""
 		return
 
-	status_label.text = "Server: error"
+	http_status_message = "Server: error"
+	_update_status_label()
 	show_error(_message_from_payload(payload, "health check failed"))
 
 
@@ -116,6 +128,7 @@ func _on_game_created(success: bool, payload: Dictionary) -> void:
 	_select_option(viewer_select, game_store.selected_viewer)
 	_select_option(actor_select, game_store.selected_actor)
 	render_snapshot(payload)
+	api_client.connect_game_socket(game_store.game_id, game_store.selected_viewer)
 	error_label.text = ""
 
 
@@ -129,13 +142,28 @@ func _on_snapshot_received(success: bool, payload: Dictionary) -> void:
 	error_label.text = ""
 
 
+func _on_socket_snapshot_received(game_id: String, viewer: int, snapshot: Dictionary) -> void:
+	if game_id != game_store.game_id or viewer != game_store.selected_viewer:
+		return
+
+	game_store.apply_snapshot(snapshot)
+	render_snapshot(snapshot)
+	error_label.text = ""
+
+
+func _on_socket_connection_changed(connected: bool, message: String) -> void:
+	socket_status_message = message
+	_update_status_label()
+	if connected:
+		error_label.text = ""
+
+
 func _on_grand_tichu_submitted(success: bool, payload: Dictionary) -> void:
 	if not success:
 		show_error(_message_from_payload(payload, "grand tichu request failed"))
 		return
 
-	game_store.apply_snapshot(payload)
-	render_snapshot(payload)
+	_apply_action_response(payload)
 	error_label.text = ""
 
 
@@ -144,9 +172,8 @@ func _on_exchange_submitted(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "exchange request failed"))
 		return
 
-	game_store.apply_snapshot(payload)
 	_reset_exchange_selection()
-	render_snapshot(payload)
+	_apply_action_response(payload)
 	error_label.text = ""
 
 
@@ -155,8 +182,7 @@ func _on_small_tichu_submitted(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "small tichu request failed"))
 		return
 
-	game_store.apply_snapshot(payload)
-	render_snapshot(payload)
+	_apply_action_response(payload)
 	error_label.text = ""
 
 
@@ -165,9 +191,8 @@ func _on_play_submitted(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "play request failed"))
 		return
 
-	game_store.apply_snapshot(payload)
 	_reset_play_selection()
-	render_snapshot(payload)
+	_apply_action_response(payload)
 	error_label.text = ""
 
 
@@ -176,9 +201,8 @@ func _on_pass_submitted(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "pass request failed"))
 		return
 
-	game_store.apply_snapshot(payload)
 	_reset_play_selection()
-	render_snapshot(payload)
+	_apply_action_response(payload)
 	error_label.text = ""
 
 
@@ -187,8 +211,7 @@ func _on_dragon_recipient_submitted(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "dragon recipient request failed"))
 		return
 
-	game_store.apply_snapshot(payload)
-	render_snapshot(payload)
+	_apply_action_response(payload)
 	error_label.text = ""
 
 
@@ -665,7 +688,7 @@ func _on_viewer_selected(index: int) -> void:
 	legal_plays_error = ""
 	_reset_play_preview()
 	if game_store.has_active_game():
-		api_client.get_snapshot(game_store.game_id, game_store.selected_viewer)
+		api_client.connect_game_socket(game_store.game_id, game_store.selected_viewer)
 
 
 func _on_actor_selected(index: int) -> void:
@@ -688,6 +711,27 @@ func _select_option(button: OptionButton, value: int) -> void:
 		if button.get_item_id(item_index) == value:
 			button.select(item_index)
 			return
+
+
+func _update_status_label() -> void:
+	status_label.text = "%s | %s" % [http_status_message, socket_status_message]
+
+
+func _apply_action_response(payload: Dictionary) -> void:
+	if _should_apply_http_action_response():
+		game_store.apply_snapshot(payload)
+		render_snapshot(payload)
+		return
+
+	render_buttons(game_store.available_actions)
+	_render_hand_cards(game_store.state.get("viewer_hand", []))
+	_update_play_selection_label()
+
+
+func _should_apply_http_action_response() -> bool:
+	if not game_store.has_active_game():
+		return true
+	return not api_client.is_socket_connected_for(game_store.game_id, game_store.selected_viewer)
 
 
 func _on_hand_card_pressed(card_data: Dictionary) -> void:

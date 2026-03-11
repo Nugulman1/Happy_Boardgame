@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, FastAPI, Query
+from fastapi import APIRouter, FastAPI, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -13,7 +13,6 @@ from tichu.session_service import (
     create_session,
     get_available_actions,
     get_legal_plays_for_viewer,
-    preview_combo as preview_combo_payload,
     preview_play as preview_play_payload,
     submit_dragon_recipient as submit_dragon_recipient_action,
     submit_exchange_choice,
@@ -68,11 +67,6 @@ class DragonRecipientRequest(BaseModel):
     recipient_index: int
 
 
-class PreviewComboRequest(BaseModel):
-    viewer: int
-    cards: list[CardModel]
-
-
 class PlayPreviewRequest(BaseModel):
     viewer: int
     cards: list[CardModel]
@@ -84,8 +78,74 @@ router = APIRouter()
 _sessions: dict[str, GameSession] = {}
 
 
+class SocketManager:
+    def __init__(self) -> None:
+        self._connections: dict[str, dict[int, WebSocket]] = {}
+
+    def reset(self) -> None:
+        self._connections.clear()
+
+    async def connect(self, game_id: str, viewer: int, websocket: WebSocket) -> None:
+        await websocket.accept()
+
+        viewers = self._connections.setdefault(game_id, {})
+        previous = viewers.get(viewer)
+        viewers[viewer] = websocket
+
+        if previous is not None and previous is not websocket:
+            try:
+                await previous.close(
+                    code=status.WS_1000_NORMAL_CLOSURE,
+                    reason="replaced by a newer connection",
+                )
+            except RuntimeError:
+                self.disconnect(game_id, viewer, previous)
+
+    def disconnect(self, game_id: str, viewer: int, websocket: WebSocket) -> None:
+        viewers = self._connections.get(game_id)
+        if viewers is None:
+            return
+        if viewers.get(viewer) is not websocket:
+            return
+
+        del viewers[viewer]
+        if not viewers:
+            del self._connections[game_id]
+
+    async def send_snapshot(
+        self,
+        session: GameSession,
+        viewer: int,
+        *,
+        effects: list[dict[str, object]] | None = None,
+    ) -> None:
+        websocket = self._connections.get(session.game_id, {}).get(viewer)
+        if websocket is None:
+            return
+
+        payload = _websocket_snapshot_event(session, viewer, effects=effects)
+        try:
+            await websocket.send_json(payload)
+        except Exception:
+            self.disconnect(session.game_id, viewer, websocket)
+
+    async def broadcast_snapshot(
+        self,
+        session: GameSession,
+        *,
+        effects: list[dict[str, object]] | None = None,
+    ) -> None:
+        viewers = list(self._connections.get(session.game_id, {}).keys())
+        for viewer in viewers:
+            await self.send_snapshot(session, viewer, effects=effects)
+
+
+_socket_manager = SocketManager()
+
+
 def reset_sessions() -> None:
     _sessions.clear()
+    _socket_manager.reset()
 
 
 def register_tichu_api(app: FastAPI) -> None:
@@ -226,6 +286,20 @@ def _raise_action_error(exc: SessionActionError) -> None:
     raise ApiError(code_to_status.get(exc.code, 400), exc.code, exc.message) from exc
 
 
+def _websocket_snapshot_event(
+    session: GameSession,
+    viewer: int,
+    *,
+    effects: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    return {
+        "type": "snapshot",
+        "game_id": session.game_id,
+        "viewer": viewer,
+        "snapshot": _snapshot_response(session, viewer, effects=effects),
+    }
+
+
 @router.post("/games/tichu", status_code=201)
 def create_tichu_game():
     session = create_session()
@@ -247,8 +321,28 @@ def get_game_snapshot(game_id: str, viewer: int = Query(...)):
     return _snapshot_response(session, viewer)
 
 
+@router.websocket("/ws/games/{game_id}")
+async def game_socket(websocket: WebSocket, game_id: str, viewer: int = Query(...)):
+    try:
+        _validate_viewer(viewer)
+        session = _get_session(game_id)
+    except ApiError:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    await _socket_manager.connect(game_id, viewer, websocket)
+    try:
+        await websocket.send_json(_websocket_snapshot_event(session, viewer))
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        _socket_manager.disconnect(game_id, viewer, websocket)
+
+
 @router.post("/games/{game_id}/prepare/grand-tichu")
-def submit_grand_tichu(game_id: str, payload: GrandTichuRequest):
+async def submit_grand_tichu(game_id: str, payload: GrandTichuRequest):
     session = _get_session(game_id)
     _validate_player_index(payload.player_index)
     try:
@@ -256,11 +350,13 @@ def submit_grand_tichu(game_id: str, payload: GrandTichuRequest):
     except SessionActionError as exc:
         _raise_action_error(exc)
 
-    return _snapshot_response(session, payload.player_index, effects=effects)
+    response = _snapshot_response(session, payload.player_index, effects=effects)
+    await _socket_manager.broadcast_snapshot(session, effects=effects)
+    return response
 
 
 @router.post("/games/{game_id}/prepare/exchange")
-def submit_exchange(game_id: str, payload: ExchangeRequest):
+async def submit_exchange(game_id: str, payload: ExchangeRequest):
     session = _get_session(game_id)
     _validate_player_index(payload.player_index)
 
@@ -274,11 +370,13 @@ def submit_exchange(game_id: str, payload: ExchangeRequest):
     except SessionActionError as exc:
         _raise_action_error(exc)
 
-    return _snapshot_response(session, payload.player_index, effects=effects)
+    response = _snapshot_response(session, payload.player_index, effects=effects)
+    await _socket_manager.broadcast_snapshot(session, effects=effects)
+    return response
 
 
 @router.post("/games/{game_id}/actions/small-tichu")
-def submit_small_tichu(game_id: str, payload: SmallTichuRequest):
+async def submit_small_tichu(game_id: str, payload: SmallTichuRequest):
     session = _get_session(game_id)
     _validate_player_index(payload.player_index)
     try:
@@ -286,11 +384,13 @@ def submit_small_tichu(game_id: str, payload: SmallTichuRequest):
     except SessionActionError as exc:
         _raise_action_error(exc)
 
-    return _snapshot_response(session, payload.player_index, effects=effects)
+    response = _snapshot_response(session, payload.player_index, effects=effects)
+    await _socket_manager.broadcast_snapshot(session, effects=effects)
+    return response
 
 
 @router.post("/games/{game_id}/actions/play")
-def submit_play(game_id: str, payload: PlayRequest):
+async def submit_play(game_id: str, payload: PlayRequest):
     session = _get_session(game_id)
     _validate_player_index(payload.player_index)
     cards = _cards_from_models(payload.cards)
@@ -299,11 +399,13 @@ def submit_play(game_id: str, payload: PlayRequest):
     except SessionActionError as exc:
         _raise_action_error(exc)
 
-    return _snapshot_response(session, payload.player_index, effects=effects)
+    response = _snapshot_response(session, payload.player_index, effects=effects)
+    await _socket_manager.broadcast_snapshot(session, effects=effects)
+    return response
 
 
 @router.post("/games/{game_id}/actions/pass")
-def submit_pass(game_id: str, payload: PassRequest):
+async def submit_pass(game_id: str, payload: PassRequest):
     session = _get_session(game_id)
     _validate_player_index(payload.player_index)
     try:
@@ -311,11 +413,13 @@ def submit_pass(game_id: str, payload: PassRequest):
     except SessionActionError as exc:
         _raise_action_error(exc)
 
-    return _snapshot_response(session, payload.player_index, effects=effects)
+    response = _snapshot_response(session, payload.player_index, effects=effects)
+    await _socket_manager.broadcast_snapshot(session, effects=effects)
+    return response
 
 
 @router.post("/games/{game_id}/actions/dragon-recipient")
-def submit_dragon_recipient(game_id: str, payload: DragonRecipientRequest):
+async def submit_dragon_recipient(game_id: str, payload: DragonRecipientRequest):
     session = _get_session(game_id)
     _validate_player_index(payload.player_index)
     _validate_player_index(payload.recipient_index)
@@ -323,7 +427,9 @@ def submit_dragon_recipient(game_id: str, payload: DragonRecipientRequest):
         effects = submit_dragon_recipient_action(session, payload.player_index, payload.recipient_index)
     except SessionActionError as exc:
         _raise_action_error(exc)
-    return _snapshot_response(session, payload.player_index, effects=effects)
+    response = _snapshot_response(session, payload.player_index, effects=effects)
+    await _socket_manager.broadcast_snapshot(session, effects=effects)
+    return response
 
 
 @router.get("/games/{game_id}/legal-plays")
@@ -331,14 +437,6 @@ def get_legal_plays_endpoint(game_id: str, viewer: int = Query(...)):
     _validate_viewer(viewer)
     session = _get_session(game_id)
     return {"plays": [_cards_payload(cards) for cards in get_legal_plays_for_viewer(session, viewer)]}
-
-
-@router.post("/games/{game_id}/preview-combo")
-def preview_combo(game_id: str, payload: PreviewComboRequest):
-    _get_session(game_id)
-    _validate_viewer(payload.viewer)
-    cards = _cards_from_models(payload.cards)
-    return preview_combo_payload(cards)
 
 
 @router.post("/games/{game_id}/play-preview")

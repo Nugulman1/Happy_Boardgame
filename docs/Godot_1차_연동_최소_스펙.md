@@ -104,10 +104,6 @@
   - 현재 턴 플레이어면 합법 플레이 목록 반환
   - 1차에서는 필수 아님
 
-- `POST /games/{game_id}/preview-combo`
-  - 선택 카드가 합법 shape인지 미리 확인
-  - 1차에서는 필수 아님
-
 ---
 
 ## 2. Godot가 신뢰할 응답 필드
@@ -268,7 +264,7 @@
 - WebSocket
 - 실시간 멀티플레이 push 동기화
 - `effects` 기반 고급 연출
-- `legal-plays`, `preview-combo` 기반 고급 UX
+- `legal-plays`, `play-preview` 기반 고급 UX
 
 ---
 

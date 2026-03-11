@@ -98,16 +98,6 @@ def get_legal_plays_for_viewer(session: GameSession, viewer: int) -> list[list[C
     return get_legal_plays(session.round_state, viewer)
 
 
-def preview_combo(cards: list[Card]) -> dict[str, object]:
-    combo = evaluate_combo(cards)
-    combo_type = combo.combo_type if combo is not None else None
-    return {
-        "combo_type": combo_type,
-        "is_legal_shape": combo is not None,
-        "is_bomb": combo_type in ("bomb_four", "bomb_straight_flush"),
-    }
-
-
 def combo_summary_payload(combo: ComboInfo | None) -> dict[str, object] | None:
     if combo is None:
         return None
