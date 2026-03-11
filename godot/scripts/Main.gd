@@ -2,6 +2,8 @@ extends Control
 
 const ApiClientScript = preload("res://scripts/ApiClient.gd")
 const GameStoreScript = preload("res://scripts/GameStore.gd")
+const PresentationBusScript = preload("res://scripts/PresentationBus.gd")
+const EffectInterpreterScript = preload("res://scripts/EffectInterpreter.gd")
 const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 
 @onready var status_label: Label = $"RootLayout/HeaderSection/StatusRow/StatusLabel"
@@ -9,6 +11,7 @@ const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 @onready var turn_label: Label = $"RootLayout/HeaderSection/StatusRow/TurnLabel"
 @onready var game_info_label: Label = $"RootLayout/HeaderSection/StatusRow/GameInfoLabel"
 @onready var error_label: Label = $"RootLayout/HeaderSection/ErrorLabel"
+@onready var announcement_label: Label = $"RootLayout/HeaderSection/AnnouncementLabel"
 @onready var lobby_section: VBoxContainer = $"RootLayout/LobbySection"
 @onready var room_status_label: Label = $"RootLayout/LobbySection/RoomStatusLabel"
 @onready var room_code_input: LineEdit = $"RootLayout/LobbySection/RoomControlsRow/RoomCodeInput"
@@ -45,7 +48,9 @@ const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 @onready var effects_label: Label = $"RootLayout/EffectsSection/EffectsLabel"
 @onready var hand_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/HandSection/HandContainer"
 @onready var table_info_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableInfoLabel"
+@onready var table_motion_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableMotionLabel"
 @onready var table_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/TableSection/TableContainer"
+@onready var score_summary_label: Label = $"RootLayout/ContentRow/RightColumn/ResultSection/ScoreSummaryLabel"
 @onready var seat_buttons: Array[Button] = [
 	$"RootLayout/LobbySection/SeatRow/Seat0Button",
 	$"RootLayout/LobbySection/SeatRow/Seat1Button",
@@ -55,6 +60,8 @@ const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 
 var api_client
 var game_store
+var presentation_bus
+var effect_interpreter
 var pending_exchange_cards: Array = []
 var pending_play_cards: Array = []
 var legal_plays_loading := false
@@ -67,13 +74,24 @@ var recent_effect_lines: Array[String] = []
 var http_status_message := "Server: checking..."
 var socket_status_message := "Live: disconnected"
 var restoring_session := false
+var presented_turn_highlight_player = null
+var announcement_text := ""
+var table_motion_text := ""
+var score_summary_text := ""
+var announcement_deadline_msec := 0
+var table_motion_deadline_msec := 0
+var score_summary_deadline_msec := 0
 
 
 func _ready() -> void:
 	api_client = ApiClientScript.new()
 	game_store = GameStoreScript.new()
+	presentation_bus = PresentationBusScript.new()
+	effect_interpreter = EffectInterpreterScript.new()
 	add_child(api_client)
 	add_child(game_store)
+	add_child(presentation_bus)
+	add_child(effect_interpreter)
 
 	api_client.health_checked.connect(_on_health_checked)
 	api_client.game_created.connect(_on_game_created)
@@ -91,6 +109,7 @@ func _ready() -> void:
 	api_client.socket_action_error.connect(_on_socket_action_error)
 	api_client.room_socket_error.connect(_on_room_socket_error)
 	api_client.socket_connection_changed.connect(_on_socket_connection_changed)
+	presentation_bus.presentation_event_started.connect(_on_presentation_event_started)
 
 	create_room_button.pressed.connect(_on_create_room_pressed)
 	start_room_button.pressed.connect(_on_start_room_pressed)
@@ -119,6 +138,9 @@ func _ready() -> void:
 	_reset_play_selection()
 	_render_hand_cards([])
 	_render_cards(table_container, [])
+	_refresh_announcement_label()
+	_refresh_table_motion_label()
+	_refresh_score_summary_label()
 	_render_dragon_recipient_options({})
 	_render_round_result({})
 	create_game_button.visible = false
@@ -132,6 +154,10 @@ func _ready() -> void:
 	_update_status_label()
 	api_client.check_health()
 	_try_restore_saved_session()
+
+
+func _process(_delta: float) -> void:
+	_expire_presentation_state()
 
 
 func _exit_tree() -> void:
@@ -156,6 +182,9 @@ func _on_game_created(success: bool, payload: Dictionary) -> void:
 		show_error(_message_from_payload(payload, "game creation failed"))
 		return
 
+	presentation_bus.clear()
+	presented_turn_highlight_player = null
+	_clear_presentation_overlays()
 	recent_effect_lines.clear()
 	game_store.apply_snapshot(payload)
 	game_store.set_selected_viewer(game_store.viewer)
@@ -212,6 +241,22 @@ func _on_socket_action_result(_request_id: int, action: String, _effects: Array)
 func _on_socket_action_error(_request_id: int, action: String, error_payload: Dictionary) -> void:
 	var fallback := "%s request failed" % action if not action.is_empty() else "socket action failed"
 	show_error(_message_from_payload({"error": error_payload}, fallback))
+
+
+func _on_presentation_event_started(event: Dictionary) -> void:
+	var event_name := str(event.get("name", ""))
+	match event_name:
+		"announce_grand_tichu", "announce_small_tichu":
+			_apply_announcement_event(event)
+		"play_cards_to_table":
+			_apply_cards_played_event(event)
+		"collect_trick_cards":
+			_apply_trick_won_event(event)
+		"announce_round_finished":
+			_apply_round_finished_event(event)
+		"highlight_current_turn":
+			_apply_turn_highlight_event(event)
+	presentation_bus.acknowledge_current()
 
 
 func _on_room_created(success: bool, payload: Dictionary) -> void:
@@ -535,6 +580,8 @@ func render_snapshot(snapshot: Dictionary, refresh_helpers: bool = true) -> void
 	var table_state: Dictionary = state.get("table", {})
 	var phase: String = str(snapshot.get("phase", "-"))
 
+	_enqueue_presentation_events(snapshot)
+	_sync_turn_highlight_state(snapshot)
 	_append_effects(snapshot.get("effects", []))
 	phase_label.text = "Phase: %s" % phase
 	game_info_label.text = _game_info_text(state.get("game", {}))
@@ -704,9 +751,11 @@ func _render_round_result(round_result: Dictionary) -> void:
 
 	var deltas: Array = round_result.get("score_deltas", [])
 	var players_out_order: Array = round_result.get("players_out_order", [])
-	round_result_label.text = "Round Result: %s | Scores %s | Out %s" % [
+	var team_scores: Array = game_store.state.get("game", {}).get("team_scores", [])
+	round_result_label.text = "Round Result: %s | Delta %s | Total %s | Out %s" % [
 		str(round_result.get("end_reason", "-")),
 		str(deltas),
+		str(team_scores),
 		str(players_out_order),
 	]
 
@@ -717,6 +766,7 @@ func _render_players_summary(players: Array) -> void:
 		return
 
 	var lines: Array[String] = []
+	var highlighted_player = _current_highlighted_turn_player()
 	for player_data in players:
 		if typeof(player_data) != TYPE_DICTIONARY:
 			lines.append(str(player_data))
@@ -726,7 +776,8 @@ func _render_players_summary(players: Array) -> void:
 		var status := "out" if player_data.get("is_out", false) else "active"
 		var grand := "grand" if player_data.get("declared_grand_tichu", false) else "no grand"
 		var small := "small" if player_data.get("declared_small_tichu", false) else "no small"
-		lines.append("P%d | hand %d | %s | %s | %s" % [player_index, hand_count, status, grand, small])
+		var turn_marker := " <TURN>" if highlighted_player != null and player_index == int(highlighted_player) else ""
+		lines.append("P%d%s | hand %d | %s | %s | %s" % [player_index, turn_marker, hand_count, status, grand, small])
 	players_summary_label.text = "Players:\n%s" % "\n".join(lines)
 
 
@@ -766,6 +817,172 @@ func _message_from_payload(payload: Dictionary, fallback: String) -> String:
 	if typeof(error_payload) == TYPE_DICTIONARY:
 		return str(error_payload.get("message", fallback))
 	return fallback
+
+
+func _expire_presentation_state() -> void:
+	var now := Time.get_ticks_msec()
+	if announcement_deadline_msec > 0 and now >= announcement_deadline_msec:
+		announcement_deadline_msec = 0
+		announcement_text = ""
+		_refresh_announcement_label()
+	if table_motion_deadline_msec > 0 and now >= table_motion_deadline_msec:
+		table_motion_deadline_msec = 0
+		table_motion_text = ""
+		_refresh_table_motion_label()
+	if score_summary_deadline_msec > 0 and now >= score_summary_deadline_msec:
+		score_summary_deadline_msec = 0
+		score_summary_text = ""
+		_refresh_score_summary_label()
+
+
+func _clear_presentation_overlays() -> void:
+	announcement_text = ""
+	table_motion_text = ""
+	score_summary_text = ""
+	announcement_deadline_msec = 0
+	table_motion_deadline_msec = 0
+	score_summary_deadline_msec = 0
+	_refresh_announcement_label()
+	_refresh_table_motion_label()
+	_refresh_score_summary_label()
+
+
+func _show_announcement(text: String, duration_msec: int = 3000) -> void:
+	announcement_text = text
+	announcement_deadline_msec = Time.get_ticks_msec() + duration_msec
+	_refresh_announcement_label()
+
+
+func _show_table_motion(text: String, duration_msec: int = 2200) -> void:
+	table_motion_text = text
+	table_motion_deadline_msec = Time.get_ticks_msec() + duration_msec
+	_refresh_table_motion_label()
+
+
+func _show_score_summary(text: String, duration_msec: int = 5000) -> void:
+	score_summary_text = text
+	score_summary_deadline_msec = Time.get_ticks_msec() + duration_msec
+	_refresh_score_summary_label()
+
+
+func _refresh_announcement_label() -> void:
+	announcement_label.text = "Announcement: -" if announcement_text.is_empty() else "Announcement: %s" % announcement_text
+
+
+func _refresh_table_motion_label() -> void:
+	table_motion_label.text = "Table Motion: -" if table_motion_text.is_empty() else "Table Motion: %s" % table_motion_text
+
+
+func _refresh_score_summary_label() -> void:
+	score_summary_label.text = "Round Score: -" if score_summary_text.is_empty() else "Round Score: %s" % score_summary_text
+
+
+func _apply_announcement_event(event: Dictionary) -> void:
+	var payload: Dictionary = event.get("payload", {})
+	var player_index := int(payload.get("player_index", -1))
+	var source_effect_type := str(event.get("source_effect_type", ""))
+	var declared_text := "Grand Tichu" if source_effect_type == "grand_tichu_declared" else "Small Tichu"
+	if source_effect_type == "grand_tichu_declared" and not bool(payload.get("declare", false)):
+		declared_text = "No Grand Tichu"
+	_show_announcement("Player %d: %s" % [player_index, declared_text])
+
+
+func _apply_cards_played_event(event: Dictionary) -> void:
+	var payload: Dictionary = event.get("payload", {})
+	var player_index := int(payload.get("player_index", -1))
+	var cards_text := _format_cards_inline(payload.get("cards", []))
+	_show_table_motion("Player %d -> Table: %s" % [player_index, cards_text])
+
+
+func _apply_trick_won_event(event: Dictionary) -> void:
+	var payload: Dictionary = event.get("payload", {})
+	var winner_index := int(payload.get("winner_index", -1))
+	var recipient_index = payload.get("recipient_index", null)
+	if recipient_index == null:
+		_show_table_motion("Player %d collects the trick" % winner_index)
+		return
+	_show_table_motion("Player %d gives dragon trick to Player %d" % [winner_index, int(recipient_index)])
+
+
+func _apply_round_finished_event(event: Dictionary) -> void:
+	var payload: Dictionary = event.get("payload", {})
+	var snapshot_context: Dictionary = event.get("snapshot_context", {})
+	var deltas: Array = payload.get("score_deltas", [])
+	var totals: Array = snapshot_context.get("team_scores", [])
+	_show_score_summary(
+		"Round %s | Team 0/2 %s (%s) | Team 1/3 %s (%s)" % [
+			str(snapshot_context.get("round_index", "-")),
+			str(_team_score_value(totals, 0)),
+			str(_team_score_value(deltas, 0)),
+			str(_team_score_value(totals, 1)),
+			str(_team_score_value(deltas, 1)),
+		]
+	)
+
+
+func _enqueue_presentation_events(snapshot: Dictionary) -> void:
+	var effects: Array = snapshot.get("effects", [])
+	if effects.is_empty():
+		return
+	var events: Array = effect_interpreter.interpret_effects(effects, snapshot)
+	if events.is_empty():
+		return
+	presentation_bus.enqueue_events(events)
+
+
+func _sync_turn_highlight_state(snapshot: Dictionary) -> void:
+	var state: Dictionary = snapshot.get("state", {})
+	var table_state: Dictionary = state.get("table", {})
+	var phase := str(snapshot.get("phase", ""))
+	if phase != "trick" and phase != "await_dragon_recipient":
+		presented_turn_highlight_player = null
+		return
+	if _snapshot_has_effect_type(snapshot, "turn_changed"):
+		return
+	presented_turn_highlight_player = table_state.get("current_player_index", null)
+
+
+func _snapshot_has_effect_type(snapshot: Dictionary, effect_type: String) -> bool:
+	var effects: Array = snapshot.get("effects", [])
+	for effect in effects:
+		if typeof(effect) != TYPE_DICTIONARY:
+			continue
+		if str(effect.get("type", "")) == effect_type:
+			return true
+	return false
+
+
+func _apply_turn_highlight_event(event: Dictionary) -> void:
+	var payload: Dictionary = event.get("payload", {})
+	var snapshot_context: Dictionary = event.get("snapshot_context", {})
+	var next_player = payload.get("player_index", snapshot_context.get("current_player_index", null))
+	presented_turn_highlight_player = next_player
+	_render_players_summary(game_store.state.get("players", []))
+
+
+func _current_highlighted_turn_player():
+	return presented_turn_highlight_player
+
+
+func _format_cards_inline(cards: Variant) -> String:
+	if typeof(cards) != TYPE_ARRAY or cards.is_empty():
+		return "-"
+	var parts: Array[String] = []
+	for card_data in cards:
+		if typeof(card_data) == TYPE_DICTIONARY:
+			parts.append(_format_card(card_data))
+		else:
+			parts.append(str(card_data))
+	return ", ".join(parts)
+
+
+func _team_score_value(scores: Variant, index: int):
+	if typeof(scores) != TYPE_ARRAY:
+		return "-"
+	var score_array: Array = scores
+	if index < 0 or index >= score_array.size():
+		return "-"
+	return score_array[index]
 
 
 func _append_effects(effects: Array) -> void:
@@ -973,6 +1190,9 @@ func _try_restore_saved_session() -> void:
 
 func _clear_room_runtime() -> void:
 	game_store.clear_multiplayer_identity()
+	presentation_bus.clear()
+	presented_turn_highlight_player = null
+	_clear_presentation_overlays()
 	room_code_input.text = ""
 	recent_effect_lines.clear()
 	_render_effects()

@@ -62,6 +62,12 @@ text = ""
 modulate = Color(0.85, 0.2, 0.2, 1)
 autowrap_mode = 3
 
+[node name="AnnouncementLabel" type="Label" parent="RootLayout/HeaderSection"]
+layout_mode = 2
+text = "Announcement: -"
+modulate = Color(0.95, 0.8, 0.25, 1)
+autowrap_mode = 3
+
 [node name="LobbySection" type="VBoxContainer" parent="RootLayout"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -210,6 +216,12 @@ layout_mode = 2
 text = "Leader: - | Trick: -"
 autowrap_mode = 3
 
+[node name="TableMotionLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+layout_mode = 2
+text = "Table Motion: -"
+modulate = Color(0.45, 0.8, 1, 1)
+autowrap_mode = 3
+
 [node name="TableContainer" type="HBoxContainer" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -344,6 +356,12 @@ theme_override_constants/separation = 8
 [node name="RoundResultLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ResultSection"]
 layout_mode = 2
 text = "Round Result: -"
+autowrap_mode = 3
+
+[node name="ScoreSummaryLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ResultSection"]
+layout_mode = 2
+text = "Round Score: -"
+modulate = Color(0.45, 0.95, 0.55, 1)
 autowrap_mode = 3
 
 [node name="EffectsSection" type="VBoxContainer" parent="RootLayout"]

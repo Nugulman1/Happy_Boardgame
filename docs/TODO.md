@@ -6,26 +6,31 @@
 
 ## 최우선
 
-- 서버 `effects` 인벤토리 정리
-  - 현재 내려가는 effect 타입을 전부 목록화
-  - 각 effect에 필요한 최소 필드와 Godot에서의 의미를 정리
-  - snapshot 복구용 상태와 일회성 연출용 effect를 구분
+- 3D 캐릭터 만들어서 넣기
+  - 3D 캐릭터 자산 확보 방식 결정
+  - 최소 1캐릭터로 Godot 씬에 붙일 수 있는 구조 만들기
+  - 가능하면 `idle`, `declare`, `react` 정도 재생 가능한 상태까지 맞추기
 
-- `effect -> presentation event` 계층 만들기
-  - Godot에서 서버 effect를 직접 UI에 꽂지 않고 중간 해석 레이어를 둔다
-  - 예: `cards_played` -> 카드 이동 연출 요청, `grand_tichu_declared` -> 배너/캐릭터 선언 연출 요청
-  - 나중에 캐릭터 자산이 붙어도 UI 코드가 안 무너지게 구조 먼저 고정
+- UI / UX 개선
+  - 현재 테스트 UI를 실제 플레이 화면 구조에 가깝게 다듬기
+  - 임시 announcement / table motion / score summary를 더 보기 좋은 배너/패널 형태로 정리
+  - 로비/인게임 섹션 재배치
+  - 상태/오류/버튼 피드백 정리
 
-- 기본 연출 1차 연결
-  - 카드 이동
-  - 선언 배너
-  - 현재 턴 강조
-  - 트릭 승자 표시
-  - 라운드 종료 표시
+- 연출/UI 테스트 추가
+  - Godot presentation event 수동 테스트 체크리스트 만들기
+  - 선언 배너, 카드 이동, 턴 강조, 라운드 점수 표시 확인 항목 정리
+  - 가능하면 headless 로드 외에 최소 smoke test 범위 늘리기
 
 ---
 
 ## 다음
+
+- placeholder 연출을 실제 연출로 교체
+  - `cards_played`를 실제 카드 이동 애니메이션으로 바꾸기
+  - `trick_won`을 카드 회수/획득 연출로 바꾸기
+  - `grand_tichu_declared`, `small_tichu_declared`를 실제 선언 배너로 바꾸기
+  - 사운드/SFX 연결
 
 - 멀티플레이 안정화 마무리
   - room/game reconnect UX 점검
@@ -42,20 +47,14 @@
   - `app/tichu_api.py`에 몰린 room/socket/auth 로직을 파일 단위로 정리
   - room 모델/유틸/socket manager를 나누기
 
-  - 체크리스트 만들어서 전체적 점검
-
 ---
 
 ## 그다음
 
-- 캐릭터 애니메이션/카드 연출 연결
+- 캐릭터 애니메이션/카드 연출 확장
   - effect 해석 계층 위에 실제 캐릭터 리액션 붙이기
   - 티츄 선언, 승리, 패배, 라운드 종료 컷인 연결
-
-- UI/UX 정리
-  - 현재 테스트 UI를 실제 플레이 화면 구조로 정리
-  - 로비/인게임 섹션 재배치
-  - 로그/상태/버튼 피드백 개선
+  - 2D placeholder를 유지할지, SubViewport 기반 3D로 갈지 최종 방향 고정
 
 ---
 
