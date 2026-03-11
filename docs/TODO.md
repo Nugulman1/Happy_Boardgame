@@ -6,22 +6,33 @@
 
 ## 최우선
 
-- UI / UX 개선
-  - 현재 테스트 UI를 실제 플레이 화면 구조에 가깝게 다듬기
-  - 플레이어 4칸 패널, 선언 배너, 결과 패널 디자인 다듬기
-  - 초상화 placeholder를 실제 이미지 교체 구조로 연결하기
-  - 로비/인게임 섹션 재배치
-  - 상태/오류/버튼 피드백 정리
+1. 캐릭터 프로필, 카드 모양, 테이블 등 이미지 추가 및 연결
+2. UI, UX 실제 사용처럼 변경
+3. 시나리오와 직접 테스트 할 부분 테스트
+4. 코드 구조 이해 후 리팩토링
 
-- 연출/UI 테스트 추가
-  - Godot presentation event 수동 테스트 체크리스트 만들기
-  - 선언 배너, 초상화 상태, 카드 중앙 갱신, 턴 강조, 라운드 점수 표시 확인 항목 정리
-  - 가능하면 headless 로드 외에 최소 smoke test 범위 늘리기
+- 이미지/UI 자산 연결
+  - 플레이어별 프로필 이미지, 카드 스프라이트, 테이블 배경을 현재 placeholder 슬롯에 연결
+  - `PortraitSlot`, 카드 칩, 결과/선언 패널을 실제 자산 기준으로 교체
+  - 툴팁/슬롯 이름 규칙을 실제 파일 네이밍 규칙과 맞추기
 
-- 2D placeholder 연출 고도화
-  - 초상화 `base / declared / failed` 상태에 실제 이미지 붙이기
-  - `DeclarationBanner`, `ResultOverlay` 톤과 문구 고정
-  - 중앙 카드 갱신 강조를 카드 스프라이트 기반으로 자연스럽게 다듬기
+- 실제 사용 기준 UI / UX 정리
+  - 현재 테스트 중심 배치를 실제 플레이 흐름 기준으로 더 다듬기
+  - 플레이어 4칸 패널, 선언 배너, 결과 패널, 손패 섹션 시선 흐름 정리
+  - 작은 창/스크롤 상황에서도 답답하지 않도록 정보 밀도 다시 조정
+  - 로비/인게임/개발 컨트롤 분리감 더 강화
+
+- 시나리오 기반 직접 테스트
+  - room 생성, join, start, reconnect, leave 흐름 점검
+  - grand/small tichu, exchange, play/pass, dragon recipient, round/game result 확인
+  - 작은 창, 스크롤, viewer/actor 전환, direct dev game 경로 포함해 수동 테스트
+  - [테스트 목록.md](/home/nugulman/dev/Happy_Boardgame/docs/%ED%85%8C%EC%8A%A4%ED%8A%B8%20%EB%AA%A9%EB%A1%9D.md) 기준으로 체크리스트 계속 보강
+
+- 코드 구조 이해 후 리팩토링
+  - `Main.gd`에서 레이아웃/상태 갱신/프레젠테이션 소비 책임 더 분리
+  - `app/tichu_api.py`에 몰린 room/socket/auth 로직 정리
+  - room 관련 코드와 game 관련 코드 분리
+  - 가능하면 presentation/event 처리와 overlay UI 제어도 별도 스크립트로 이동
 
 ---
 

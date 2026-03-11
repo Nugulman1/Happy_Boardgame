@@ -3,7 +3,10 @@
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_title"]
-font_size = 24
+font_size = 26
+
+[sub_resource type="LabelSettings" id="LabelSettings_section"]
+font_size = 18
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -14,258 +17,451 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="RootLayout" type="VBoxContainer" parent="."]
+[node name="RootLayout" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = -24.0
+offset_left = 18.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 2
+follow_focus = true
+
+[node name="AppShell" type="VBoxContainer" parent="RootLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 16
 
-[node name="HeaderSection" type="VBoxContainer" parent="RootLayout"]
+[node name="HeaderSection" type="PanelContainer" parent="RootLayout/AppShell"]
+layout_mode = 2
+
+[node name="HeaderPadding" type="MarginContainer" parent="RootLayout/AppShell/HeaderSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="HeaderRows" type="VBoxContainer" parent="RootLayout/AppShell/HeaderSection/HeaderPadding"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="RootLayout/HeaderSection"]
+[node name="TitleLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows"]
 layout_mode = 2
 text = "Happy Boardgame"
 label_settings = SubResource("LabelSettings_title")
 
-[node name="StatusRow" type="HBoxContainer" parent="RootLayout/HeaderSection"]
+[node name="StatusRow" type="HBoxContainer" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="StatusLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
+[node name="StatusLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Server: checking..."
 
-[node name="PhaseLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
+[node name="PhaseLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Phase: -"
 
-[node name="TurnLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
+[node name="TurnLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Turn: -"
 
-[node name="GameInfoLabel" type="Label" parent="RootLayout/HeaderSection/StatusRow"]
+[node name="GameInfoLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Scores: - | Round: -"
 
-[node name="ErrorLabel" type="Label" parent="RootLayout/HeaderSection"]
+[node name="ErrorLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows"]
 layout_mode = 2
 text = ""
-modulate = Color(0.85, 0.2, 0.2, 1)
+modulate = Color(0.9, 0.32, 0.26, 1)
 autowrap_mode = 3
 
-[node name="AnnouncementLabel" type="Label" parent="RootLayout/HeaderSection"]
+[node name="AnnouncementLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows"]
 layout_mode = 2
 text = "Announcement: -"
-modulate = Color(0.95, 0.8, 0.25, 1)
+modulate = Color(0.98, 0.82, 0.24, 1)
 autowrap_mode = 3
-visible = false
 
-[node name="LobbySection" type="VBoxContainer" parent="RootLayout"]
+[node name="ScreenHintLabel" type="Label" parent="RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows"]
 layout_mode = 2
-theme_override_constants/separation = 8
+text = "Mode: waiting for room or direct game"
+modulate = Color(0.58, 0.78, 0.95, 1)
+autowrap_mode = 3
 
-[node name="LobbyTitleLabel" type="Label" parent="RootLayout/LobbySection"]
+[node name="BodyRow" type="HBoxContainer" parent="RootLayout/AppShell"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="SidebarColumn" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="LobbyCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LobbyPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="LobbySection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LobbyTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection"]
 layout_mode = 2
 text = "Multiplayer Lobby"
+label_settings = SubResource("LabelSettings_section")
 
-[node name="RoomStatusLabel" type="Label" parent="RootLayout/LobbySection"]
+[node name="RoomStatusLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection"]
 layout_mode = 2
 text = "Room: -"
 autowrap_mode = 3
 
-[node name="RoomControlsRow" type="HBoxContainer" parent="RootLayout/LobbySection"]
+[node name="RoomHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+text = "Create a room or join by code."
+modulate = Color(0.7, 0.82, 0.96, 1)
+autowrap_mode = 3
 
-[node name="RoomCodeLabel" type="Label" parent="RootLayout/LobbySection/RoomControlsRow"]
+[node name="RoomControlsRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection"]
 layout_mode = 2
-text = "Room Code"
+theme_override_constants/separation = 8
 
-[node name="RoomCodeInput" type="LineEdit" parent="RootLayout/LobbySection/RoomControlsRow"]
+[node name="RoomCodeInput" type="LineEdit" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Enter room code"
 
-[node name="CreateRoomButton" type="Button" parent="RootLayout/LobbySection/RoomControlsRow"]
+[node name="CreateRoomButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow"]
 layout_mode = 2
-text = "Create Room"
+text = "Create"
 
-[node name="StartRoomButton" type="Button" parent="RootLayout/LobbySection/RoomControlsRow"]
+[node name="StartRoomButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow"]
 layout_mode = 2
-text = "Start Room"
+text = "Start"
 disabled = true
 
-[node name="LeaveRoomButton" type="Button" parent="RootLayout/LobbySection/RoomControlsRow"]
+[node name="LeaveRoomButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow"]
 layout_mode = 2
-text = "Leave Room"
+text = "Leave"
 disabled = true
 
-[node name="SeatRow" type="HBoxContainer" parent="RootLayout/LobbySection"]
+[node name="SeatRow" type="GridContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
-[node name="Seat0Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+[node name="Seat0Button" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Seat 0"
 
-[node name="Seat1Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+[node name="Seat1Button" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Seat 1"
 
-[node name="Seat2Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+[node name="Seat2Button" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Seat 2"
 
-[node name="Seat3Button" type="Button" parent="RootLayout/LobbySection/SeatRow"]
+[node name="Seat3Button" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Seat 3"
 
-[node name="ControlSection" type="VBoxContainer" parent="RootLayout"]
+[node name="DevCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DevPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="ControlSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DevTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection"]
+layout_mode = 2
+text = "Direct / Dev Controls"
+label_settings = SubResource("LabelSettings_section")
+
+[node name="ControlHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection"]
+layout_mode = 2
+text = "Direct game tools stay visible even outside multiplayer."
+modulate = Color(0.66, 0.8, 0.95, 1)
+autowrap_mode = 3
+
+[node name="ControlRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ControlRow" type="HBoxContainer" parent="RootLayout/ControlSection"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="ViewerLabel" type="Label" parent="RootLayout/ControlSection/ControlRow"]
+[node name="ViewerLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow"]
 layout_mode = 2
 text = "Viewer"
 
-[node name="ViewerSelect" type="OptionButton" parent="RootLayout/ControlSection/ControlRow"]
+[node name="ViewerSelect" type="OptionButton" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow"]
 layout_mode = 2
 
-[node name="ActorLabel" type="Label" parent="RootLayout/ControlSection/ControlRow"]
+[node name="ActorLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow"]
 layout_mode = 2
 text = "Actor"
 
-[node name="ActorSelect" type="OptionButton" parent="RootLayout/ControlSection/ControlRow"]
+[node name="ActorSelect" type="OptionButton" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow"]
 layout_mode = 2
 
-[node name="ButtonRow" type="HBoxContainer" parent="RootLayout/ControlSection"]
+[node name="ButtonRow" type="GridContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
-[node name="CreateGameButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
+[node name="CreateGameButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Create Game"
 
-[node name="RefreshButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
+[node name="RefreshButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Refresh"
 disabled = true
 
-[node name="PassButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
+[node name="PassButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Pass"
 disabled = true
 
-[node name="PlayButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
+[node name="PlayButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Play"
 disabled = true
 
-[node name="SmallTichuButton" type="Button" parent="RootLayout/ControlSection/ButtonRow"]
+[node name="SmallTichuButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Small Tichu"
 disabled = true
 
-[node name="PrepareRow" type="HBoxContainer" parent="RootLayout/ControlSection"]
+[node name="GrandTichuYesButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="GrandTichuYesButton" type="Button" parent="RootLayout/ControlSection/PrepareRow"]
-layout_mode = 2
-text = "Grand Tichu Yes"
+size_flags_horizontal = 3
+text = "Grand Yes"
 disabled = true
 
-[node name="GrandTichuNoButton" type="Button" parent="RootLayout/ControlSection/PrepareRow"]
+[node name="GrandTichuNoButton" type="Button" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"]
 layout_mode = 2
-text = "Grand Tichu No"
+size_flags_horizontal = 3
+text = "Grand No"
 disabled = true
 
-[node name="ContentRow" type="HBoxContainer" parent="RootLayout"]
+[node name="ActionHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection"]
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 20
+text = "Action hint: create a room or direct game to start."
+modulate = Color(0.88, 0.89, 0.91, 1)
+autowrap_mode = 3
 
-[node name="LeftColumn" type="VBoxContainer" parent="RootLayout/ContentRow"]
+[node name="EffectsCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 16
 
-[node name="TableSection" type="VBoxContainer" parent="RootLayout/ContentRow/LeftColumn"]
+[node name="EffectsPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
 
-[node name="TableTitleLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+[node name="EffectsSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding"]
 layout_mode = 2
-text = "Table Cards"
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
-[node name="TableInfoLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+[node name="EffectsTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding/EffectsSection"]
 layout_mode = 2
-text = "Leader: - | Trick: -"
-autowrap_mode = 3
+text = "Recent Effects"
+label_settings = SubResource("LabelSettings_section")
 
-[node name="TableMotionLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+[node name="TableMotionLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding/EffectsSection"]
 layout_mode = 2
 text = "Table Motion: -"
 modulate = Color(0.45, 0.8, 1, 1)
 autowrap_mode = 3
-visible = false
 
-[node name="TableContainer" type="HBoxContainer" parent="RootLayout/ContentRow/LeftColumn/TableSection"]
+[node name="EffectsLabel" type="Label" parent="RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding/EffectsSection"]
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_vertical = 3
+text = "Effects: -"
+autowrap_mode = 3
 
-[node name="HandSection" type="VBoxContainer" parent="RootLayout/ContentRow/LeftColumn"]
+[node name="PlayStageCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow"]
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="HandTitleLabel" type="Label" parent="RootLayout/ContentRow/LeftColumn/HandSection"]
+[node name="PlayStagePadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard"]
 layout_mode = 2
-text = "Viewer Hand"
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
 
-[node name="HandContainer" type="HBoxContainer" parent="RootLayout/ContentRow/LeftColumn/HandSection"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="RightColumn" type="VBoxContainer" parent="RootLayout/ContentRow"]
+[node name="PlayStage" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 16
 
-[node name="PlayersSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+[node name="StageHeaderRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StageTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/StageHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Play Stage"
+label_settings = SubResource("LabelSettings_section")
+
+[node name="PlayStageHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/StageHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Waiting for active game..."
+horizontal_alignment = 2
+modulate = Color(0.7, 0.82, 0.96, 1)
+autowrap_mode = 3
+
+[node name="TableSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage"]
+layout_mode = 2
+size_flags_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TableTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection"]
+layout_mode = 2
+text = "Table Cards"
+
+[node name="TableInfoLabel" type="Label" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection"]
+layout_mode = 2
+text = "Leader: - | Trick: -"
+autowrap_mode = 3
+
+[node name="TableCardFrame" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TableCardPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection/TableCardFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="TableContainer" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection/TableCardFrame/TableCardPadding"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="HandSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="HandHeaderRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HandTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection/HandHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Viewer Hand"
+
+[node name="HandHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection/HandHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Select cards when your viewer and actor match."
+horizontal_alignment = 2
+modulate = Color(0.88, 0.89, 0.91, 1)
+autowrap_mode = 3
+
+[node name="HandFrame" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection"]
+custom_minimum_size = Vector2(0, 154)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HandPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection/HandFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="HandContainer" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection/HandFrame/HandPadding"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PlayersTitleLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection"]
+[node name="ContextColumn" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="PlayersCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayersPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="PlayersSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PlayersTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection"]
 layout_mode = 2
 text = "Players"
+label_settings = SubResource("LabelSettings_section")
 
-[node name="PlayersGrid" type="GridContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection"]
+[node name="PlayersGrid" type="GridContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection"]
 layout_mode = 2
 columns = 2
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
 
-[node name="PlayerPanel0" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid"]
-custom_minimum_size = Vector2(0, 132)
+[node name="PlayerPanel0" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid"]
+custom_minimum_size = Vector2(0, 146)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TurnHighlight" type="ColorRect" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0"]
+[node name="TurnHighlight" type="ColorRect" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -274,9 +470,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.95, 0.82, 0.35, 0.2)
+color = Color(0.95, 0.82, 0.35, 0.22)
 
-[node name="Content" type="MarginContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0"]
+[node name="Content" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -288,45 +484,45 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Rows" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content"]
+[node name="Rows" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
-custom_minimum_size = Vector2(0, 56)
+[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 
-[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot"]
+[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot"]
 layout_mode = 2
 
-[node name="PortraitLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot/PortraitCenter"]
+[node name="PortraitLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot/PortraitCenter"]
 layout_mode = 2
 text = "Portrait"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="NameLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
+[node name="NameLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
 layout_mode = 2
 text = "Player ?"
 
-[node name="HandLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
+[node name="HandLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
 layout_mode = 2
 text = "Hand: -"
 
-[node name="StatusLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
+[node name="StatusLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
 layout_mode = 2
 text = "Status: -"
 
-[node name="BadgeLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
+[node name="BadgeLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows"]
 layout_mode = 2
 text = "Badge: -"
 
-[node name="PlayerPanel1" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid"]
-custom_minimum_size = Vector2(0, 132)
+[node name="PlayerPanel1" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid"]
+custom_minimum_size = Vector2(0, 146)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TurnHighlight" type="ColorRect" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1"]
+[node name="TurnHighlight" type="ColorRect" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -335,9 +531,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.95, 0.82, 0.35, 0.2)
+color = Color(0.95, 0.82, 0.35, 0.22)
 
-[node name="Content" type="MarginContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1"]
+[node name="Content" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -349,45 +545,45 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Rows" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content"]
+[node name="Rows" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
-custom_minimum_size = Vector2(0, 56)
+[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 
-[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot"]
+[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot"]
 layout_mode = 2
 
-[node name="PortraitLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot/PortraitCenter"]
+[node name="PortraitLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot/PortraitCenter"]
 layout_mode = 2
 text = "Portrait"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="NameLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
+[node name="NameLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
 layout_mode = 2
 text = "Player ?"
 
-[node name="HandLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
+[node name="HandLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
 layout_mode = 2
 text = "Hand: -"
 
-[node name="StatusLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
+[node name="StatusLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
 layout_mode = 2
 text = "Status: -"
 
-[node name="BadgeLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
+[node name="BadgeLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows"]
 layout_mode = 2
 text = "Badge: -"
 
-[node name="PlayerPanel2" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid"]
-custom_minimum_size = Vector2(0, 132)
+[node name="PlayerPanel2" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid"]
+custom_minimum_size = Vector2(0, 146)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TurnHighlight" type="ColorRect" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2"]
+[node name="TurnHighlight" type="ColorRect" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -396,9 +592,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.95, 0.82, 0.35, 0.2)
+color = Color(0.95, 0.82, 0.35, 0.22)
 
-[node name="Content" type="MarginContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2"]
+[node name="Content" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -410,45 +606,45 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Rows" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content"]
+[node name="Rows" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
-custom_minimum_size = Vector2(0, 56)
+[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 
-[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot"]
+[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot"]
 layout_mode = 2
 
-[node name="PortraitLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot/PortraitCenter"]
+[node name="PortraitLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot/PortraitCenter"]
 layout_mode = 2
 text = "Portrait"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="NameLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
+[node name="NameLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
 layout_mode = 2
 text = "Player ?"
 
-[node name="HandLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
+[node name="HandLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
 layout_mode = 2
 text = "Hand: -"
 
-[node name="StatusLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
+[node name="StatusLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
 layout_mode = 2
 text = "Status: -"
 
-[node name="BadgeLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
+[node name="BadgeLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows"]
 layout_mode = 2
 text = "Badge: -"
 
-[node name="PlayerPanel3" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid"]
-custom_minimum_size = Vector2(0, 132)
+[node name="PlayerPanel3" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid"]
+custom_minimum_size = Vector2(0, 146)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TurnHighlight" type="ColorRect" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3"]
+[node name="TurnHighlight" type="ColorRect" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -457,9 +653,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.95, 0.82, 0.35, 0.2)
+color = Color(0.95, 0.82, 0.35, 0.22)
 
-[node name="Content" type="MarginContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3"]
+[node name="Content" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -471,157 +667,195 @@ offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Rows" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content"]
+[node name="Rows" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
-custom_minimum_size = Vector2(0, 56)
+[node name="PortraitSlot" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
+custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 
-[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot"]
+[node name="PortraitCenter" type="CenterContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot"]
 layout_mode = 2
 
-[node name="PortraitLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot/PortraitCenter"]
+[node name="PortraitLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot/PortraitCenter"]
 layout_mode = 2
 text = "Portrait"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="NameLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
+[node name="NameLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
 layout_mode = 2
 text = "Player ?"
 
-[node name="HandLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
+[node name="HandLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
 layout_mode = 2
 text = "Hand: -"
 
-[node name="StatusLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
+[node name="StatusLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
 layout_mode = 2
 text = "Status: -"
 
-[node name="BadgeLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
+[node name="BadgeLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows"]
 layout_mode = 2
 text = "Badge: -"
 
-[node name="PlayersOutOrderLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlayersSection"]
+[node name="PlayersOutOrderLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection"]
 layout_mode = 2
 text = "Out Order: -"
 autowrap_mode = 3
 
-[node name="ExchangeSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+[node name="ActionCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ActionPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="ActionSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ActionTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection"]
+layout_mode = 2
+text = "Action Context"
+label_settings = SubResource("LabelSettings_section")
+
+[node name="ExchangeSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ExchangeTitleLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection"]
+[node name="ExchangeTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection"]
 layout_mode = 2
 text = "Exchange Selection"
 
-[node name="ExchangeSelectionRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/ExchangeSection"]
+[node name="ExchangeSelectionRow" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 4
 
-[node name="SelectedLeftLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow"]
+[node name="SelectedLeftLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeSelectionRow"]
 layout_mode = 2
 text = "Left: -"
 
-[node name="SelectedTeamLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow"]
+[node name="SelectedTeamLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeSelectionRow"]
 layout_mode = 2
 text = "Team: -"
 
-[node name="SelectedRightLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow"]
+[node name="SelectedRightLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeSelectionRow"]
 layout_mode = 2
 text = "Right: -"
 
-[node name="ExchangeButtonRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/ExchangeSection"]
+[node name="ExchangeHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+text = "Exchange hint: pick 3 cards as viewer=actor."
+modulate = Color(0.88, 0.89, 0.91, 1)
+autowrap_mode = 3
 
-[node name="SubmitExchangeButton" type="Button" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow"]
+[node name="ExchangeButtonRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SubmitExchangeButton" type="Button" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeButtonRow"]
 layout_mode = 2
 text = "Submit Exchange"
 disabled = true
 
-[node name="ClearExchangeButton" type="Button" parent="RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow"]
+[node name="ClearExchangeButton" type="Button" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeButtonRow"]
 layout_mode = 2
 text = "Clear Exchange"
 disabled = true
 
-[node name="PlaySection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+[node name="PlaySection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PlayTitleLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+[node name="PlayTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection"]
 layout_mode = 2
 text = "Play Selection"
 
-[node name="SelectedPlayLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+[node name="SelectedPlayLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection"]
 layout_mode = 2
 text = "Selected: -"
+autowrap_mode = 3
 
-[node name="CurrentCallLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+[node name="SelectionHintLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection"]
+layout_mode = 2
+text = "Selection hint: waiting for playable hand."
+modulate = Color(0.88, 0.89, 0.91, 1)
+autowrap_mode = 3
+
+[node name="CurrentCallLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection"]
 layout_mode = 2
 text = "Current Call: -"
 
-[node name="CallRankRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+[node name="CallRankRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="CallRankLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/PlaySection/CallRankRow"]
+[node name="CallRankLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/CallRankRow"]
 layout_mode = 2
 text = "Call Rank"
 
-[node name="CallRankSelect" type="OptionButton" parent="RootLayout/ContentRow/RightColumn/PlaySection/CallRankRow"]
+[node name="CallRankSelect" type="OptionButton" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/CallRankRow"]
 layout_mode = 2
 disabled = true
 
-[node name="PlaySelectionButtonRow" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/PlaySection"]
+[node name="PlaySelectionButtonRow" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
-[node name="ClearPlaySelectionButton" type="Button" parent="RootLayout/ContentRow/RightColumn/PlaySection/PlaySelectionButtonRow"]
+[node name="ClearPlaySelectionButton" type="Button" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/PlaySelectionButtonRow"]
 layout_mode = 2
 text = "Clear Play Selection"
 disabled = true
 
-[node name="DragonSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+[node name="DragonSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DragonPromptLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/DragonSection"]
+[node name="DragonPromptLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/DragonSection"]
 layout_mode = 2
 text = "Dragon Recipient: -"
 
-[node name="DragonRecipientContainer" type="HBoxContainer" parent="RootLayout/ContentRow/RightColumn/DragonSection"]
+[node name="DragonRecipientContainer" type="HBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/DragonSection"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
-[node name="ResultSection" type="VBoxContainer" parent="RootLayout/ContentRow/RightColumn"]
+[node name="ResultCard" type="PanelContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn"]
 layout_mode = 2
-theme_override_constants/separation = 8
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="RoundResultLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ResultSection"]
+[node name="ResultPadding" type="MarginContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ResultCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="ResultSection" type="VBoxContainer" parent="RootLayout/AppShell/BodyRow/ContextColumn/ResultCard/ResultPadding"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ResultTitleLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ResultCard/ResultPadding/ResultSection"]
+layout_mode = 2
+text = "Round / Result"
+label_settings = SubResource("LabelSettings_section")
+
+[node name="RoundResultLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ResultCard/ResultPadding/ResultSection"]
 layout_mode = 2
 text = "Round Result: -"
 autowrap_mode = 3
 
-[node name="ScoreSummaryLabel" type="Label" parent="RootLayout/ContentRow/RightColumn/ResultSection"]
+[node name="ScoreSummaryLabel" type="Label" parent="RootLayout/AppShell/BodyRow/ContextColumn/ResultCard/ResultPadding/ResultSection"]
 layout_mode = 2
 text = "Round Score: -"
 modulate = Color(0.45, 0.95, 0.55, 1)
-autowrap_mode = 3
-
-[node name="EffectsSection" type="VBoxContainer" parent="RootLayout"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="EffectsTitleLabel" type="Label" parent="RootLayout/EffectsSection"]
-layout_mode = 2
-text = "Recent Effects"
-
-[node name="EffectsLabel" type="Label" parent="RootLayout/EffectsSection"]
-layout_mode = 2
-text = "Effects: -"
 autowrap_mode = 3
 
 [node name="DeclarationBanner" type="PanelContainer" parent="."]
@@ -630,11 +864,12 @@ layout_mode = 1
 anchors_preset = 10
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -220.0
-offset_top = 30.0
-offset_right = 220.0
-offset_bottom = 116.0
+offset_left = -250.0
+offset_top = 34.0
+offset_right = 250.0
+offset_bottom = 122.0
 grow_horizontal = 2
+self_modulate = Color(1, 0.95, 0.78, 1)
 
 [node name="BannerContent" type="MarginContainer" parent="DeclarationBanner"]
 layout_mode = 2
@@ -651,12 +886,14 @@ theme_override_constants/separation = 4
 layout_mode = 2
 text = "Declaration"
 horizontal_alignment = 1
+modulate = Color(0.4, 0.24, 0.04, 1)
 
 [node name="BannerSubtitleLabel" type="Label" parent="DeclarationBanner/BannerContent/BannerRows"]
 layout_mode = 2
 text = "Player 0 called Tichu"
 horizontal_alignment = 1
 autowrap_mode = 3
+modulate = Color(0.46, 0.29, 0.08, 1)
 
 [node name="ResultOverlay" type="PanelContainer" parent="."]
 visible = false
@@ -666,12 +903,13 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -225.0
-offset_top = -95.0
-offset_right = 225.0
-offset_bottom = 95.0
+offset_left = -240.0
+offset_top = -98.0
+offset_right = 240.0
+offset_bottom = 98.0
 grow_horizontal = 2
 grow_vertical = 2
+self_modulate = Color(0.87, 0.95, 0.9, 1)
 
 [node name="OverlayContent" type="MarginContainer" parent="ResultOverlay"]
 layout_mode = 2
@@ -688,9 +926,11 @@ theme_override_constants/separation = 8
 layout_mode = 2
 text = "Round Result"
 horizontal_alignment = 1
+modulate = Color(0.08, 0.28, 0.18, 1)
 
 [node name="OverlayBodyLabel" type="Label" parent="ResultOverlay/OverlayContent/OverlayRows"]
 layout_mode = 2
 text = "Team 0/2 +100 | Team 1/3 -100"
 horizontal_alignment = 1
 autowrap_mode = 3
+modulate = Color(0.12, 0.34, 0.22, 1)

@@ -5,110 +5,129 @@ const GameStoreScript = preload("res://scripts/GameStore.gd")
 const PresentationBusScript = preload("res://scripts/PresentationBus.gd")
 const EffectInterpreterScript = preload("res://scripts/EffectInterpreter.gd")
 const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
+const SCREEN_MODE_IDLE := "idle"
+const SCREEN_MODE_LOBBY := "lobby"
+const SCREEN_MODE_IN_GAME := "in_game"
+const SCREEN_MODE_FINISHED := "finished"
+const SCREEN_MODE_RESTORING := "restoring"
 
-@onready var status_label: Label = $"RootLayout/HeaderSection/StatusRow/StatusLabel"
-@onready var phase_label: Label = $"RootLayout/HeaderSection/StatusRow/PhaseLabel"
-@onready var turn_label: Label = $"RootLayout/HeaderSection/StatusRow/TurnLabel"
-@onready var game_info_label: Label = $"RootLayout/HeaderSection/StatusRow/GameInfoLabel"
-@onready var error_label: Label = $"RootLayout/HeaderSection/ErrorLabel"
-@onready var announcement_label: Label = $"RootLayout/HeaderSection/AnnouncementLabel"
+@onready var app_shell: VBoxContainer = $"RootLayout/AppShell"
+@onready var body_row: HBoxContainer = $"RootLayout/AppShell/BodyRow"
+@onready var status_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow/StatusLabel"
+@onready var phase_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow/PhaseLabel"
+@onready var turn_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow/TurnLabel"
+@onready var game_info_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/StatusRow/GameInfoLabel"
+@onready var error_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/ErrorLabel"
+@onready var announcement_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/AnnouncementLabel"
+@onready var screen_hint_label: Label = $"RootLayout/AppShell/HeaderSection/HeaderPadding/HeaderRows/ScreenHintLabel"
 @onready var declaration_banner: PanelContainer = $"DeclarationBanner"
 @onready var declaration_banner_title_label: Label = $"DeclarationBanner/BannerContent/BannerRows/BannerTitleLabel"
 @onready var declaration_banner_subtitle_label: Label = $"DeclarationBanner/BannerContent/BannerRows/BannerSubtitleLabel"
-@onready var lobby_section: VBoxContainer = $"RootLayout/LobbySection"
-@onready var room_status_label: Label = $"RootLayout/LobbySection/RoomStatusLabel"
-@onready var room_code_input: LineEdit = $"RootLayout/LobbySection/RoomControlsRow/RoomCodeInput"
-@onready var create_room_button: Button = $"RootLayout/LobbySection/RoomControlsRow/CreateRoomButton"
-@onready var start_room_button: Button = $"RootLayout/LobbySection/RoomControlsRow/StartRoomButton"
-@onready var leave_room_button: Button = $"RootLayout/LobbySection/RoomControlsRow/LeaveRoomButton"
-@onready var viewer_select: OptionButton = $"RootLayout/ControlSection/ControlRow/ViewerSelect"
-@onready var actor_select: OptionButton = $"RootLayout/ControlSection/ControlRow/ActorSelect"
-@onready var create_game_button: Button = $"RootLayout/ControlSection/ButtonRow/CreateGameButton"
-@onready var control_row: HBoxContainer = $"RootLayout/ControlSection/ControlRow"
-@onready var control_section: VBoxContainer = $"RootLayout/ControlSection"
-@onready var content_row: HBoxContainer = $"RootLayout/ContentRow"
-@onready var effects_section: VBoxContainer = $"RootLayout/EffectsSection"
-@onready var refresh_button: Button = $"RootLayout/ControlSection/ButtonRow/RefreshButton"
-@onready var pass_button: Button = $"RootLayout/ControlSection/ButtonRow/PassButton"
-@onready var play_button: Button = $"RootLayout/ControlSection/ButtonRow/PlayButton"
-@onready var small_tichu_button: Button = $"RootLayout/ControlSection/ButtonRow/SmallTichuButton"
-@onready var grand_tichu_yes_button: Button = $"RootLayout/ControlSection/PrepareRow/GrandTichuYesButton"
-@onready var grand_tichu_no_button: Button = $"RootLayout/ControlSection/PrepareRow/GrandTichuNoButton"
-@onready var selected_left_label: Label = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow/SelectedLeftLabel"
-@onready var selected_team_label: Label = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow/SelectedTeamLabel"
-@onready var selected_right_label: Label = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeSelectionRow/SelectedRightLabel"
-@onready var submit_exchange_button: Button = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow/SubmitExchangeButton"
-@onready var clear_exchange_button: Button = $"RootLayout/ContentRow/RightColumn/ExchangeSection/ExchangeButtonRow/ClearExchangeButton"
-@onready var selected_play_label: Label = $"RootLayout/ContentRow/RightColumn/PlaySection/SelectedPlayLabel"
-@onready var current_call_label: Label = $"RootLayout/ContentRow/RightColumn/PlaySection/CurrentCallLabel"
-@onready var call_rank_select: OptionButton = $"RootLayout/ContentRow/RightColumn/PlaySection/CallRankRow/CallRankSelect"
-@onready var clear_play_selection_button: Button = $"RootLayout/ContentRow/RightColumn/PlaySection/PlaySelectionButtonRow/ClearPlaySelectionButton"
-@onready var dragon_prompt_label: Label = $"RootLayout/ContentRow/RightColumn/DragonSection/DragonPromptLabel"
-@onready var dragon_recipient_container: HBoxContainer = $"RootLayout/ContentRow/RightColumn/DragonSection/DragonRecipientContainer"
-@onready var round_result_label: Label = $"RootLayout/ContentRow/RightColumn/ResultSection/RoundResultLabel"
-@onready var players_out_order_label: Label = $"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersOutOrderLabel"
-@onready var effects_label: Label = $"RootLayout/EffectsSection/EffectsLabel"
-@onready var hand_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/HandSection/HandContainer"
-@onready var table_info_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableInfoLabel"
-@onready var table_motion_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableMotionLabel"
-@onready var table_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/TableSection/TableContainer"
-@onready var score_summary_label: Label = $"RootLayout/ContentRow/RightColumn/ResultSection/ScoreSummaryLabel"
+@onready var sidebar_column: VBoxContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn"
+@onready var lobby_section: VBoxContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection"
+@onready var room_status_label: Label = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomStatusLabel"
+@onready var room_hint_label: Label = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomHintLabel"
+@onready var room_code_input: LineEdit = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow/RoomCodeInput"
+@onready var create_room_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow/CreateRoomButton"
+@onready var start_room_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow/StartRoomButton"
+@onready var leave_room_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/RoomControlsRow/LeaveRoomButton"
+@onready var seat_row: GridContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow"
+@onready var viewer_select: OptionButton = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow/ViewerSelect"
+@onready var actor_select: OptionButton = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow/ActorSelect"
+@onready var create_game_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/CreateGameButton"
+@onready var control_row: HBoxContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlRow"
+@onready var control_section: VBoxContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection"
+@onready var control_button_row: GridContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow"
+@onready var control_hint_label: Label = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ControlHintLabel"
+@onready var action_hint_label: Label = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ActionHintLabel"
+@onready var effects_section: VBoxContainer = $"RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding/EffectsSection"
+@onready var refresh_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/RefreshButton"
+@onready var pass_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/PassButton"
+@onready var play_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/PlayButton"
+@onready var small_tichu_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/SmallTichuButton"
+@onready var grand_tichu_yes_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/GrandTichuYesButton"
+@onready var grand_tichu_no_button: Button = $"RootLayout/AppShell/BodyRow/SidebarColumn/DevCard/DevPadding/ControlSection/ButtonRow/GrandTichuNoButton"
+@onready var play_stage_hint_label: Label = $"RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/StageHeaderRow/PlayStageHintLabel"
+@onready var hand_hint_label: Label = $"RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection/HandHeaderRow/HandHintLabel"
+@onready var context_column: VBoxContainer = $"RootLayout/AppShell/BodyRow/ContextColumn"
+@onready var selected_left_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeSelectionRow/SelectedLeftLabel"
+@onready var selected_team_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeSelectionRow/SelectedTeamLabel"
+@onready var selected_right_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeSelectionRow/SelectedRightLabel"
+@onready var exchange_hint_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeHintLabel"
+@onready var submit_exchange_button: Button = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeButtonRow/SubmitExchangeButton"
+@onready var clear_exchange_button: Button = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/ExchangeSection/ExchangeButtonRow/ClearExchangeButton"
+@onready var selected_play_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/SelectedPlayLabel"
+@onready var selection_hint_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/SelectionHintLabel"
+@onready var current_call_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/CurrentCallLabel"
+@onready var call_rank_select: OptionButton = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/CallRankRow/CallRankSelect"
+@onready var clear_play_selection_button: Button = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/PlaySection/PlaySelectionButtonRow/ClearPlaySelectionButton"
+@onready var dragon_prompt_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/DragonSection/DragonPromptLabel"
+@onready var dragon_recipient_container: HBoxContainer = $"RootLayout/AppShell/BodyRow/ContextColumn/ActionCard/ActionPadding/ActionSection/DragonSection/DragonRecipientContainer"
+@onready var round_result_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ResultCard/ResultPadding/ResultSection/RoundResultLabel"
+@onready var players_out_order_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersOutOrderLabel"
+@onready var players_grid: GridContainer = $"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid"
+@onready var effects_label: Label = $"RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding/EffectsSection/EffectsLabel"
+@onready var hand_container: HBoxContainer = $"RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/HandSection/HandFrame/HandPadding/HandContainer"
+@onready var table_info_label: Label = $"RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection/TableInfoLabel"
+@onready var table_motion_label: Label = $"RootLayout/AppShell/BodyRow/SidebarColumn/EffectsCard/EffectsPadding/EffectsSection/TableMotionLabel"
+@onready var table_container: HBoxContainer = $"RootLayout/AppShell/BodyRow/PlayStageCard/PlayStagePadding/PlayStage/TableSection/TableCardFrame/TableCardPadding/TableContainer"
+@onready var score_summary_label: Label = $"RootLayout/AppShell/BodyRow/ContextColumn/ResultCard/ResultPadding/ResultSection/ScoreSummaryLabel"
 @onready var result_overlay: PanelContainer = $"ResultOverlay"
 @onready var result_overlay_title_label: Label = $"ResultOverlay/OverlayContent/OverlayRows/OverlayTitleLabel"
 @onready var result_overlay_body_label: Label = $"ResultOverlay/OverlayContent/OverlayRows/OverlayBodyLabel"
 @onready var player_panel_containers: Array[PanelContainer] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3",
 ]
 @onready var player_turn_highlights: Array[ColorRect] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/TurnHighlight",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/TurnHighlight",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/TurnHighlight",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/TurnHighlight",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/TurnHighlight",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/TurnHighlight",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/TurnHighlight",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/TurnHighlight",
 ]
 @onready var player_name_labels: Array[Label] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/NameLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/NameLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/NameLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/NameLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/NameLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/NameLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/NameLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/NameLabel",
 ]
 @onready var player_hand_labels: Array[Label] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/HandLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/HandLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/HandLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/HandLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/HandLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/HandLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/HandLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/HandLabel",
 ]
 @onready var player_status_labels: Array[Label] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/StatusLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/StatusLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/StatusLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/StatusLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/StatusLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/StatusLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/StatusLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/StatusLabel",
 ]
 @onready var player_badge_labels: Array[Label] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/BadgeLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/BadgeLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/BadgeLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/BadgeLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/BadgeLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/BadgeLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/BadgeLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/BadgeLabel",
 ]
 @onready var player_portrait_slots: Array[PanelContainer] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot",
 ]
 @onready var player_portrait_labels: Array[Label] = [
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
-	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/AppShell/BodyRow/ContextColumn/PlayersCard/PlayersPadding/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
 ]
 @onready var seat_buttons: Array[Button] = [
-	$"RootLayout/LobbySection/SeatRow/Seat0Button",
-	$"RootLayout/LobbySection/SeatRow/Seat1Button",
-	$"RootLayout/LobbySection/SeatRow/Seat2Button",
-	$"RootLayout/LobbySection/SeatRow/Seat3Button",
+	$"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow/Seat0Button",
+	$"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow/Seat1Button",
+	$"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow/Seat2Button",
+	$"RootLayout/AppShell/BodyRow/SidebarColumn/LobbyCard/LobbyPadding/LobbySection/SeatRow/Seat3Button",
 ]
 
 var api_client
@@ -189,6 +208,10 @@ func _ready() -> void:
 	for seat_index in range(seat_buttons.size()):
 		seat_buttons[seat_index].pressed.connect(_on_join_seat_pressed.bind(seat_index))
 
+	var viewport := get_viewport()
+	if viewport != null and not viewport.size_changed.is_connected(_on_viewport_size_changed):
+		viewport.size_changed.connect(_on_viewport_size_changed)
+
 	render_buttons({})
 	_reset_exchange_selection()
 	_reset_play_selection()
@@ -202,14 +225,15 @@ func _ready() -> void:
 		set_player_portrait_placeholder(player_index)
 	_render_dragon_recipient_options({})
 	_render_round_result({})
-	create_game_button.visible = false
-	control_row.visible = false
-	viewer_select.disabled = true
-	actor_select.disabled = true
-	content_row.visible = false
-	control_section.visible = false
-	effects_section.visible = false
+	create_game_button.visible = true
+	control_row.visible = true
+	viewer_select.disabled = false
+	actor_select.disabled = false
 	_update_room_ui()
+	_apply_responsive_layout()
+	_refresh_screen_mode()
+	_refresh_room_hint()
+	_refresh_action_feedback({})
 	_update_status_label()
 	api_client.check_health()
 	_try_restore_saved_session()
@@ -280,6 +304,8 @@ func _on_socket_connection_changed(connected: bool, message: String) -> void:
 	_update_room_ui()
 	if game_store.has_active_game():
 		render_buttons(game_store.available_actions)
+	else:
+		_refresh_action_feedback({})
 	if connected:
 		error_label.text = ""
 
@@ -674,6 +700,7 @@ func render_snapshot(snapshot: Dictionary, refresh_helpers: bool = true) -> void
 		_sync_legal_plays(snapshot)
 		_sync_play_preview()
 	_update_play_selection_label()
+	_refresh_screen_mode()
 
 
 func render_hand(viewer_hand: Array) -> void:
@@ -728,6 +755,8 @@ func render_buttons(actions: Dictionary) -> void:
 	submit_exchange_button.disabled = not can_exchange or pending_exchange_cards.size() != 3
 	clear_exchange_button.disabled = pending_exchange_cards.is_empty()
 	clear_play_selection_button.disabled = pending_play_cards.is_empty()
+	_refresh_action_feedback(actions)
+	_refresh_screen_mode()
 
 
 func show_error(message: String) -> void:
@@ -742,13 +771,15 @@ func _render_cards(container: HBoxContainer, cards: Array) -> void:
 	if cards.is_empty():
 		var empty_label := Label.new()
 		empty_label.text = "(empty)"
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		empty_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		empty_label.modulate = Color(0.82, 0.85, 0.9, 1)
 		container.add_child(empty_label)
 		return
 
 	for card_data in cards:
-		var card_label := Label.new()
-		card_label.text = _format_card(card_data)
-		container.add_child(card_label)
+		container.add_child(_build_card_chip(card_data, false))
 
 
 func _render_hand_cards(cards: Array) -> void:
@@ -764,10 +795,14 @@ func _render_hand_cards(cards: Array) -> void:
 	for card_data in cards:
 		var card_button := Button.new()
 		var card_text := _format_card(card_data)
-		if _contains_card(pending_exchange_cards, card_data) or _contains_card(pending_play_cards, card_data):
+		var is_selected := _contains_card(pending_exchange_cards, card_data) or _contains_card(pending_play_cards, card_data)
+		if is_selected:
 			card_text = "[%s]" % card_text
 		card_button.text = card_text
+		card_button.custom_minimum_size = Vector2(90, 54)
 		card_button.disabled = not _can_interact_with_hand()
+		_apply_card_button_style(card_button, card_data, is_selected)
+		card_button.tooltip_text = "Selected" if is_selected else "Click to select"
 		card_button.pressed.connect(_on_hand_card_pressed.bind(card_data))
 		hand_container.add_child(card_button)
 
@@ -816,7 +851,7 @@ func _render_round_result(round_result: Dictionary) -> void:
 	var deltas: Array = round_result.get("score_deltas", [])
 	var players_out_order: Array = round_result.get("players_out_order", [])
 	var team_scores: Array = game_store.state.get("game", {}).get("team_scores", [])
-	round_result_label.text = "Round Result: %s | Delta %s | Total %s | Out %s" % [
+	round_result_label.text = "Round Result: %s\nDelta %s | Total %s\nOut %s" % [
 		str(round_result.get("end_reason", "-")),
 		str(deltas),
 		str(team_scores),
@@ -843,12 +878,22 @@ func _render_players_summary(players: Array) -> void:
 
 func _render_player_panel(player_index: int, player_data: Dictionary, is_turn: bool) -> void:
 	var has_player_data := not player_data.is_empty()
-	player_name_labels[player_index].text = "Player %d" % player_index if has_player_data else "Player ?"
+	var name_text := "Player %d" % player_index if has_player_data else "Player ?"
+	if has_player_data and player_index == game_store.selected_viewer:
+		name_text += " (viewer)"
+	player_name_labels[player_index].text = name_text
 	player_hand_labels[player_index].text = "Hand: %d" % int(player_data.get("hand_count", 0)) if has_player_data else "Hand: -"
 	player_status_labels[player_index].text = "Status: %s" % _player_status_text(player_data) if has_player_data else "Status: -"
 	player_badge_labels[player_index].text = "Badge: %s" % _player_badge_text(player_data) if has_player_data else "Badge: -"
 	player_turn_highlights[player_index].visible = is_turn
-	player_panel_containers[player_index].self_modulate = Color(1, 1, 1, 1) if has_player_data else Color(0.82, 0.82, 0.82, 1)
+	if not has_player_data:
+		player_panel_containers[player_index].self_modulate = Color(0.82, 0.82, 0.82, 1)
+	elif bool(player_data.get("is_out", false)):
+		player_panel_containers[player_index].self_modulate = Color(0.85, 0.9, 0.88, 1)
+	elif player_index == game_store.selected_viewer:
+		player_panel_containers[player_index].self_modulate = Color(1.0, 0.98, 0.9, 1)
+	else:
+		player_panel_containers[player_index].self_modulate = Color(1, 1, 1, 1)
 	_refresh_player_portrait(player_index)
 
 
@@ -890,7 +935,8 @@ func reset_player_portrait_state(player_index: int) -> void:
 func _refresh_player_portrait(player_index: int) -> void:
 	var state_name := portrait_state_by_player[player_index]
 	var state_title := _portrait_state_title(state_name)
-	player_portrait_labels[player_index].text = "P%d\n%s" % [player_index, state_title]
+	player_portrait_labels[player_index].text = "P%d\n%s SLOT" % [player_index, state_title]
+	player_portrait_labels[player_index].tooltip_text = "Asset slot: player_%d_%s.png" % [player_index, state_name]
 	match state_name:
 		"declared":
 			player_portrait_slots[player_index].self_modulate = Color(1.0, 0.86, 0.55, 1)
@@ -914,8 +960,8 @@ func _portrait_state_title(state_name: String) -> String:
 
 
 func show_declaration_banner(player_index: int, declaration_type: String) -> void:
-	declaration_banner_title_label.text = declaration_type
-	declaration_banner_subtitle_label.text = "Player %d called %s" % [player_index, declaration_type]
+	declaration_banner_title_label.text = "%s Called" % declaration_type
+	declaration_banner_subtitle_label.text = "Player %d commits to the hand." % player_index
 	set_player_portrait_state(player_index, "declared", 2600)
 	_show_announcement("%s | Player %d" % [declaration_type, player_index], 2600)
 
@@ -931,8 +977,9 @@ func _apply_failed_tichu_portraits(tichu_outcomes: Array) -> void:
 
 
 func show_round_result(round_index, totals: Array, deltas: Array) -> void:
-	result_overlay_title_label.text = "Round %s Result" % str(round_index)
-	result_overlay_body_label.text = "Team 0/2 %s (%s)\nTeam 1/3 %s (%s)" % [
+	result_overlay.self_modulate = Color(0.87, 0.95, 0.9, 1)
+	result_overlay_title_label.text = "Round %s Closed" % str(round_index)
+	result_overlay_body_label.text = "Team 0/2: %s (%s)\nTeam 1/3: %s (%s)" % [
 		str(_team_score_value(totals, 0)),
 		_signed_value_text(_team_score_value(deltas, 0)),
 		str(_team_score_value(totals, 1)),
@@ -951,8 +998,9 @@ func show_round_result(round_index, totals: Array, deltas: Array) -> void:
 
 
 func show_game_result(team_scores: Array) -> void:
+	result_overlay.self_modulate = Color(0.93, 0.98, 0.9, 1)
 	result_overlay_title_label.text = "Game Finished"
-	result_overlay_body_label.text = "Team 0/2 %s\nTeam 1/3 %s" % [
+	result_overlay_body_label.text = "Final Score\nTeam 0/2: %s\nTeam 1/3: %s" % [
 		str(_team_score_value(team_scores, 0)),
 		str(_team_score_value(team_scores, 1)),
 	]
@@ -967,11 +1015,11 @@ func show_game_result(team_scores: Array) -> void:
 
 func show_table_cards_refresh() -> void:
 	var tween := create_tween()
-	table_container.modulate = Color(1, 1, 1, 0.72)
-	table_container.scale = Vector2(0.97, 0.97)
+	table_container.modulate = Color(1, 0.97, 0.82, 0.82)
+	table_container.scale = Vector2(0.985, 0.985)
 	tween.tween_property(table_container, "modulate", Color(1, 1, 1, 1), 0.18)
-	tween.parallel().tween_property(table_container, "scale", Vector2(1.03, 1.03), 0.12)
-	tween.tween_property(table_container, "scale", Vector2(1, 1), 0.12)
+	tween.parallel().tween_property(table_container, "scale", Vector2(1.035, 1.035), 0.12)
+	tween.tween_property(table_container, "scale", Vector2(1, 1), 0.14)
 
 
 func _render_players_out_order(players_out_order: Array) -> void:
@@ -994,6 +1042,102 @@ func _render_effects() -> void:
 func _game_info_text(game_state: Dictionary) -> String:
 	var scores: Array = game_state.get("team_scores", [])
 	return "Scores: %s | Round: %s" % [str(scores), str(game_state.get("round_index", "-"))]
+
+
+func _build_card_chip(card_data: Variant, compact: bool) -> Control:
+	var card_shell := PanelContainer.new()
+	card_shell.custom_minimum_size = Vector2(62, 72) if compact else Vector2(76, 100)
+	card_shell.self_modulate = _card_background_color(card_data)
+	card_shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var padding := MarginContainer.new()
+	padding.add_theme_constant_override("margin_left", 8)
+	padding.add_theme_constant_override("margin_top", 8)
+	padding.add_theme_constant_override("margin_right", 8)
+	padding.add_theme_constant_override("margin_bottom", 8)
+	card_shell.add_child(padding)
+
+	var rows := VBoxContainer.new()
+	rows.alignment = BoxContainer.ALIGNMENT_CENTER
+	rows.add_theme_constant_override("separation", 4)
+	padding.add_child(rows)
+
+	var suit_label := Label.new()
+	suit_label.text = _card_suit_badge(card_data)
+	suit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	suit_label.add_theme_color_override("font_color", _card_foreground_color(card_data))
+	rows.add_child(suit_label)
+
+	var rank_label := Label.new()
+	rank_label.text = _card_rank_text(card_data)
+	rank_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rank_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rank_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rank_label.add_theme_color_override("font_color", _card_foreground_color(card_data))
+	rows.add_child(rank_label)
+
+	card_shell.tooltip_text = _format_card(card_data)
+	return card_shell
+
+
+func _apply_card_button_style(card_button: Button, card_data: Variant, is_selected: bool) -> void:
+	var background := _card_background_color(card_data)
+	if is_selected:
+		background = background.lerp(Color(1.0, 0.86, 0.55, 1.0), 0.55)
+	card_button.modulate = background
+	card_button.add_theme_color_override("font_color", _card_foreground_color(card_data))
+	card_button.add_theme_color_override("font_disabled_color", _card_foreground_color(card_data).lerp(Color(0.55, 0.55, 0.55, 1), 0.45))
+
+
+func _card_background_color(card_data: Variant) -> Color:
+	var suit := ""
+	if typeof(card_data) == TYPE_DICTIONARY:
+		suit = str(card_data.get("suit", "")).to_lower()
+	match suit:
+		"jade":
+			return Color(0.82, 0.95, 0.87, 1)
+		"sword":
+			return Color(0.86, 0.9, 1.0, 1)
+		"pagoda":
+			return Color(1.0, 0.89, 0.82, 1)
+		"star":
+			return Color(0.96, 0.94, 0.78, 1)
+		"special":
+			return Color(0.9, 0.86, 1.0, 1)
+		_:
+			return Color(0.91, 0.93, 0.97, 1)
+
+
+func _card_foreground_color(card_data: Variant) -> Color:
+	var suit := ""
+	if typeof(card_data) == TYPE_DICTIONARY:
+		suit = str(card_data.get("suit", "")).to_lower()
+	match suit:
+		"jade":
+			return Color(0.08, 0.36, 0.22, 1)
+		"sword":
+			return Color(0.12, 0.26, 0.5, 1)
+		"pagoda":
+			return Color(0.48, 0.18, 0.08, 1)
+		"star":
+			return Color(0.45, 0.33, 0.04, 1)
+		"special":
+			return Color(0.3, 0.14, 0.45, 1)
+		_:
+			return Color(0.12, 0.18, 0.28, 1)
+
+
+func _card_suit_badge(card_data: Variant) -> String:
+	if typeof(card_data) != TYPE_DICTIONARY:
+		return "CARD"
+	var suit := str(card_data.get("suit", "")).to_upper()
+	return "SP" if suit.is_empty() else suit.left(2)
+
+
+func _card_rank_text(card_data: Variant) -> String:
+	if typeof(card_data) != TYPE_DICTIONARY:
+		return str(card_data)
+	return str(card_data.get("rank", "?"))
 
 
 func _format_card(card_data: Variant) -> String:
@@ -1271,6 +1415,7 @@ func _on_viewer_selected(index: int) -> void:
 	_reset_play_preview()
 	if game_store.has_active_game():
 		api_client.connect_game_socket(game_store.game_id, game_store.selected_viewer)
+	render_buttons(game_store.available_actions)
 
 
 func _on_actor_selected(index: int) -> void:
@@ -1286,6 +1431,7 @@ func _on_actor_selected(index: int) -> void:
 		},
 		false
 	)
+	render_buttons(game_store.available_actions)
 
 
 func _select_option(button: OptionButton, value: int) -> void:
@@ -1295,8 +1441,190 @@ func _select_option(button: OptionButton, value: int) -> void:
 			return
 
 
+func _on_viewport_size_changed() -> void:
+	_apply_responsive_layout()
+
+
+func _apply_responsive_layout() -> void:
+	var window := get_window()
+	var layout_size: Vector2 = window.size if window != null else get_viewport_rect().size
+	if layout_size.x <= 0.0 or layout_size.y <= 0.0:
+		return
+
+	app_shell.scale = Vector2.ONE
+	app_shell.pivot_offset = Vector2.ZERO
+	app_shell.position = Vector2.ZERO
+
+	var compact: bool = layout_size.x < 1480.0
+	var narrow: bool = layout_size.x < 1320.0
+	var very_narrow: bool = layout_size.x < 1120.0
+
+	sidebar_column.custom_minimum_size = Vector2(220 if compact else 320, 0)
+	context_column.custom_minimum_size = Vector2(240 if compact else 360, 0)
+	players_grid.columns = 1 if narrow else 2
+	seat_row.columns = 1 if very_narrow else 2
+	control_button_row.columns = 1 if very_narrow else 2
+	body_row.add_theme_constant_override("separation", 12 if compact else 18)
+	app_shell.add_theme_constant_override("separation", 12 if compact else 16)
+
+
+func _current_screen_mode() -> String:
+	if restoring_session:
+		return SCREEN_MODE_RESTORING
+	if game_store.has_active_room():
+		match game_store.room_status:
+			"lobby":
+				return SCREEN_MODE_LOBBY
+			"in_game":
+				return SCREEN_MODE_IN_GAME
+			"finished":
+				return SCREEN_MODE_FINISHED
+	if game_store.has_active_game():
+		return SCREEN_MODE_IN_GAME
+	return SCREEN_MODE_IDLE
+
+
+func _refresh_screen_mode() -> void:
+	var mode := _current_screen_mode()
+	var has_live_board := mode == SCREEN_MODE_IN_GAME or mode == SCREEN_MODE_FINISHED
+	match mode:
+		SCREEN_MODE_RESTORING:
+			screen_hint_label.text = "Mode: restoring saved multiplayer session"
+			play_stage_hint_label.text = "Restoring previous room/game..."
+			control_hint_label.text = "Direct controls remain visible while multiplayer state restores."
+		SCREEN_MODE_LOBBY:
+			screen_hint_label.text = "Mode: multiplayer lobby"
+			play_stage_hint_label.text = "Lobby is ready. Start the room to move into the play stage."
+			control_hint_label.text = "Direct game tools remain available alongside the lobby."
+		SCREEN_MODE_IN_GAME:
+			screen_hint_label.text = "Mode: live game"
+			play_stage_hint_label.text = "Live table is active for Viewer %d / Actor %d." % [
+				game_store.selected_viewer,
+				game_store.selected_actor,
+			]
+			control_hint_label.text = "Viewer / Actor switches act as dev inspection controls during live play."
+		SCREEN_MODE_FINISHED:
+			screen_hint_label.text = "Mode: finished game"
+			play_stage_hint_label.text = "Game finished. Review the board, results, or reconnect state."
+			control_hint_label.text = "Direct controls remain available for inspection after game end."
+		_:
+			screen_hint_label.text = "Mode: waiting for room or direct game"
+			play_stage_hint_label.text = "Create a room or start a direct dev game to populate the table."
+			control_hint_label.text = "Direct game tools stay visible even outside multiplayer."
+
+	lobby_section.modulate = Color(1, 1, 1, 1)
+	control_section.modulate = Color(1, 1, 1, 1)
+	effects_section.modulate = Color(1, 1, 1, 1) if has_live_board else Color(0.86, 0.86, 0.86, 1)
+
+
+func _refresh_room_hint() -> void:
+	if restoring_session:
+		room_hint_label.text = "Restoring saved room session..."
+		return
+	if not game_store.has_active_room():
+		room_hint_label.text = "Create a room or join by code."
+		return
+
+	match game_store.room_status:
+		"lobby":
+			if game_store.my_seat_index < 0:
+				room_hint_label.text = "Join an open seat to claim a player slot."
+			elif start_room_button.disabled:
+				room_hint_label.text = "Waiting for all 4 seats before the host can start."
+			else:
+				room_hint_label.text = "Host can start the room now."
+		"in_game":
+			room_hint_label.text = "Room is in game. Use the live table and action context."
+		"finished":
+			room_hint_label.text = "Room finished. Leave to reset or inspect the latest state."
+		_:
+			room_hint_label.text = "Room connected."
+
+
+func _refresh_action_feedback(actions: Dictionary) -> void:
+	var live_game_socket: bool = api_client != null and api_client.is_socket_connected_for(game_store.game_id, game_store.selected_viewer)
+	var mode := _current_screen_mode()
+	var hand_hint := "Select cards when your viewer and actor match."
+	var exchange_hint := "Exchange hint: pick 3 cards as viewer=actor."
+	var selection_hint := "Selection hint: waiting for playable hand."
+	var action_hint := "Action hint: create a room or direct game to start."
+
+	if mode == SCREEN_MODE_RESTORING:
+		action_hint = "Action hint: restoring saved session. Wait for room state."
+	elif not game_store.has_active_game():
+		if game_store.has_active_room():
+			action_hint = "Action hint: room is active, but the game has not started yet."
+		else:
+			action_hint = "Action hint: create a room or direct game to start."
+	elif not live_game_socket:
+		action_hint = "Action hint: live socket required for Viewer %d." % game_store.selected_viewer
+	else:
+		if actions.get("can_choose_dragon_recipient", false):
+			action_hint = "Action hint: dragon winner must choose an opposing recipient."
+		elif game_store.phase == "prepare_exchange":
+			action_hint = "Action hint: finish the 3-card exchange."
+		elif actions.get("can_declare_grand_tichu", false):
+			action_hint = "Action hint: respond to grand tichu before normal play."
+		elif actions.get("can_declare_small_tichu", false):
+			action_hint = "Action hint: small tichu is available before you play."
+		elif actions.get("can_play", false) or actions.get("can_pass", false):
+			action_hint = "Action hint: choose cards, then play or pass."
+		else:
+			action_hint = "Action hint: waiting for the next legal step."
+
+	if not game_store.has_active_game():
+		hand_hint = "No live hand yet. Start a room or create a direct game."
+	elif game_store.selected_actor != game_store.selected_viewer:
+		hand_hint = "Viewer and actor differ. Match them to select cards."
+	elif game_store.phase == "prepare_exchange":
+		hand_hint = "Choose 3 cards in order: left, teammate, right."
+	elif game_store.phase == "trick":
+		if actions.get("can_play", false):
+			hand_hint = "Select cards to preview the combo before playing."
+		else:
+			hand_hint = "Hand is visible, but play is not legal for the selected actor."
+	else:
+		hand_hint = "Hand interactions unlock in exchange or trick phases."
+
+	if not game_store.has_active_game():
+		exchange_hint = "Exchange hint: available after the grand tichu step."
+	elif game_store.phase != "prepare_exchange":
+		exchange_hint = "Exchange hint: inactive outside prepare_exchange."
+	elif game_store.selected_actor != game_store.selected_viewer:
+		exchange_hint = "Exchange hint: set Viewer and Actor to the same player."
+	elif not live_game_socket:
+		exchange_hint = "Exchange hint: reconnect the live socket first."
+	elif pending_exchange_cards.size() < 3:
+		exchange_hint = "Exchange hint: %d of 3 cards selected." % pending_exchange_cards.size()
+	else:
+		exchange_hint = "Exchange hint: ready to submit."
+
+	var play_helper := _play_selection_helper_text()
+	if not game_store.has_active_game():
+		selection_hint = "Selection hint: no active game."
+	elif game_store.phase != "trick":
+		selection_hint = "Selection hint: play selection is active only during trick phase."
+	elif game_store.selected_actor != game_store.selected_viewer:
+		selection_hint = "Selection hint: set Viewer and Actor to the same player."
+	elif not live_game_socket:
+		selection_hint = "Selection hint: reconnect the live socket first."
+	elif pending_play_cards.is_empty():
+		selection_hint = "Selection hint: choose at least one card."
+	else:
+		if not play_helper.is_empty():
+			selection_hint = "Selection hint: %s" % play_helper
+		else:
+			selection_hint = "Selection hint: combo selected."
+
+	action_hint_label.text = action_hint
+	hand_hint_label.text = hand_hint
+	exchange_hint_label.text = exchange_hint
+	selection_hint_label.text = selection_hint
+
+
 func _update_status_label() -> void:
 	status_label.text = "%s | %s" % [http_status_message, socket_status_message]
+	_refresh_screen_mode()
 
 
 func _apply_room_identity(payload: Dictionary) -> void:
@@ -1317,37 +1645,36 @@ func _apply_room_snapshot(snapshot: Dictionary) -> void:
 	if game_store.room_status == "in_game" and not game_store.game_id.is_empty():
 		_resume_room_or_game_socket()
 	else:
-		control_section.visible = false
-		content_row.visible = false
-		effects_section.visible = false
+		_refresh_screen_mode()
+		_refresh_action_feedback({})
 
 
 func _resume_room_or_game_socket() -> void:
 	if not game_store.has_active_room():
+		_refresh_screen_mode()
 		return
 	if game_store.room_status == "lobby":
 		api_client.connect_room_socket(game_store.room_code, game_store.seat_token)
-		control_section.visible = false
-		content_row.visible = false
-		effects_section.visible = false
+		_refresh_screen_mode()
+		_refresh_action_feedback({})
 		return
 
 	if game_store.room_status == "in_game" or game_store.room_status == "finished":
 		api_client.connect_game_socket(game_store.game_id, game_store.selected_viewer, game_store.seat_token)
 		api_client.get_snapshot(game_store.game_id, game_store.selected_viewer, game_store.seat_token)
-		control_section.visible = true
-		content_row.visible = true
-		effects_section.visible = true
+		_refresh_screen_mode()
 
 
 func _update_room_ui() -> void:
 	if not game_store.has_active_room():
 		room_status_label.text = "Room: -"
+		create_room_button.disabled = false
 		start_room_button.disabled = true
 		leave_room_button.disabled = true
 		for seat_index in range(seat_buttons.size()):
 			seat_buttons[seat_index].text = "Seat %d" % seat_index
 			seat_buttons[seat_index].disabled = false
+		_refresh_room_hint()
 		return
 
 	var snapshot: Dictionary = game_store.room_snapshot
@@ -1357,6 +1684,7 @@ func _update_room_ui() -> void:
 		game_store.room_status,
 		game_store.my_seat_index,
 	]
+	create_room_button.disabled = true
 	start_room_button.disabled = not bool(snapshot.get("can_start", false))
 	leave_room_button.disabled = game_store.room_status != "lobby"
 	for seat_index in range(seat_buttons.size()):
@@ -1373,6 +1701,8 @@ func _update_room_ui() -> void:
 			" | me" if mine else "",
 		]
 		seat_buttons[seat_index].disabled = claimed or game_store.room_status != "lobby" or mine
+	_refresh_room_hint()
+	_refresh_screen_mode()
 
 
 func _save_multiplayer_session() -> void:
@@ -1403,10 +1733,14 @@ func _try_restore_saved_session() -> void:
 		return
 	restoring_session = true
 	room_code_input.text = room_code
+	_refresh_screen_mode()
+	_refresh_room_hint()
+	_refresh_action_feedback({})
 	api_client.get_room_state(room_code, seat_token)
 
 
 func _clear_room_runtime() -> void:
+	restoring_session = false
 	game_store.clear_multiplayer_identity()
 	presentation_bus.clear()
 	presented_turn_highlight_player = null
@@ -1417,9 +1751,6 @@ func _clear_room_runtime() -> void:
 	phase_label.text = "Phase: -"
 	turn_label.text = "Turn: -"
 	game_info_label.text = "Scores: - | Round: -"
-	control_section.visible = false
-	content_row.visible = false
-	effects_section.visible = false
 	_render_hand_cards([])
 	_render_cards(table_container, [])
 	_render_round_result({})
@@ -1427,6 +1758,7 @@ func _clear_room_runtime() -> void:
 	_render_players_out_order([])
 	_render_dragon_recipient_options({})
 	_update_room_ui()
+	_refresh_action_feedback({})
 	_clear_saved_session()
 
 
@@ -1507,19 +1839,14 @@ func _reset_play_selection() -> void:
 
 
 func _update_play_selection_label() -> void:
-	var helper_text := _play_selection_helper_text()
 	if pending_play_cards.is_empty():
 		selected_play_label.text = "Selected: -"
-		if not helper_text.is_empty():
-			selected_play_label.text += " | %s" % helper_text
 		return
 
 	var texts: Array[String] = []
 	for card_data in pending_play_cards:
 		texts.append(_format_card(card_data))
 	selected_play_label.text = "Selected: %s" % ", ".join(texts)
-	if not helper_text.is_empty():
-		selected_play_label.text += " | %s" % helper_text
 
 
 func _on_call_rank_selected(index: int) -> void:
