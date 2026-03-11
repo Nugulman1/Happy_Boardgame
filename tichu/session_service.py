@@ -440,11 +440,43 @@ def _prepare_next_round(session: GameSession) -> None:
     session.exchange_choices.clear()
 
 
+def _first_place_player(round_state: RoundState) -> int | None:
+    if not round_state.players_out_order:
+        return None
+    return round_state.players_out_order[0]
+
+
+def _tichu_outcomes_payload(round_state: RoundState) -> list[dict[str, object]]:
+    first_place_player = _first_place_player(round_state)
+    outcomes: list[dict[str, object]] = []
+
+    for player_index in sorted(round_state.grand_tichu_declarers):
+        outcomes.append(
+            {
+                "player_index": player_index,
+                "declaration_type": "grand",
+                "success": player_index == first_place_player,
+            }
+        )
+
+    for player_index in sorted(round_state.small_tichu_declarers):
+        outcomes.append(
+            {
+                "player_index": player_index,
+                "declaration_type": "small",
+                "success": player_index == first_place_player,
+            }
+        )
+
+    return outcomes
+
+
 def _store_round_result(session: GameSession, score_deltas: list[int]) -> None:
     session.last_round_result = {
         "end_reason": get_round_end_reason(session.round_state),
         "score_deltas": score_deltas,
         "players_out_order": list(session.round_state.players_out_order),
+        "tichu_outcomes": _tichu_outcomes_payload(session.round_state),
     }
 
 
@@ -459,6 +491,7 @@ def _advance_after_action(session: GameSession) -> list[dict[str, object]]:
             "type": "round_finished",
             "end_reason": session.last_round_result["end_reason"],
             "score_deltas": score_deltas,
+            "tichu_outcomes": session.last_round_result["tichu_outcomes"],
         }
     ]
     if is_game_over(session.state):

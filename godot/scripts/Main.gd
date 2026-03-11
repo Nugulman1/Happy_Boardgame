@@ -12,6 +12,9 @@ const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 @onready var game_info_label: Label = $"RootLayout/HeaderSection/StatusRow/GameInfoLabel"
 @onready var error_label: Label = $"RootLayout/HeaderSection/ErrorLabel"
 @onready var announcement_label: Label = $"RootLayout/HeaderSection/AnnouncementLabel"
+@onready var declaration_banner: PanelContainer = $"DeclarationBanner"
+@onready var declaration_banner_title_label: Label = $"DeclarationBanner/BannerContent/BannerRows/BannerTitleLabel"
+@onready var declaration_banner_subtitle_label: Label = $"DeclarationBanner/BannerContent/BannerRows/BannerSubtitleLabel"
 @onready var lobby_section: VBoxContainer = $"RootLayout/LobbySection"
 @onready var room_status_label: Label = $"RootLayout/LobbySection/RoomStatusLabel"
 @onready var room_code_input: LineEdit = $"RootLayout/LobbySection/RoomControlsRow/RoomCodeInput"
@@ -43,7 +46,6 @@ const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 @onready var dragon_prompt_label: Label = $"RootLayout/ContentRow/RightColumn/DragonSection/DragonPromptLabel"
 @onready var dragon_recipient_container: HBoxContainer = $"RootLayout/ContentRow/RightColumn/DragonSection/DragonRecipientContainer"
 @onready var round_result_label: Label = $"RootLayout/ContentRow/RightColumn/ResultSection/RoundResultLabel"
-@onready var players_summary_label: Label = $"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersSummaryLabel"
 @onready var players_out_order_label: Label = $"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersOutOrderLabel"
 @onready var effects_label: Label = $"RootLayout/EffectsSection/EffectsLabel"
 @onready var hand_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/HandSection/HandContainer"
@@ -51,6 +53,57 @@ const SESSION_SAVE_PATH := "user://multiplayer_session.cfg"
 @onready var table_motion_label: Label = $"RootLayout/ContentRow/LeftColumn/TableSection/TableMotionLabel"
 @onready var table_container: HBoxContainer = $"RootLayout/ContentRow/LeftColumn/TableSection/TableContainer"
 @onready var score_summary_label: Label = $"RootLayout/ContentRow/RightColumn/ResultSection/ScoreSummaryLabel"
+@onready var result_overlay: PanelContainer = $"ResultOverlay"
+@onready var result_overlay_title_label: Label = $"ResultOverlay/OverlayContent/OverlayRows/OverlayTitleLabel"
+@onready var result_overlay_body_label: Label = $"ResultOverlay/OverlayContent/OverlayRows/OverlayBodyLabel"
+@onready var player_panel_containers: Array[PanelContainer] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3",
+]
+@onready var player_turn_highlights: Array[ColorRect] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/TurnHighlight",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/TurnHighlight",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/TurnHighlight",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/TurnHighlight",
+]
+@onready var player_name_labels: Array[Label] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/NameLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/NameLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/NameLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/NameLabel",
+]
+@onready var player_hand_labels: Array[Label] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/HandLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/HandLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/HandLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/HandLabel",
+]
+@onready var player_status_labels: Array[Label] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/StatusLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/StatusLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/StatusLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/StatusLabel",
+]
+@onready var player_badge_labels: Array[Label] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/BadgeLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/BadgeLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/BadgeLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/BadgeLabel",
+]
+@onready var player_portrait_slots: Array[PanelContainer] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot",
+]
+@onready var player_portrait_labels: Array[Label] = [
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel0/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel1/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel2/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+	$"RootLayout/ContentRow/RightColumn/PlayersSection/PlayersGrid/PlayerPanel3/Content/Rows/PortraitSlot/PortraitCenter/PortraitLabel",
+]
 @onready var seat_buttons: Array[Button] = [
 	$"RootLayout/LobbySection/SeatRow/Seat0Button",
 	$"RootLayout/LobbySection/SeatRow/Seat1Button",
@@ -81,6 +134,9 @@ var score_summary_text := ""
 var announcement_deadline_msec := 0
 var table_motion_deadline_msec := 0
 var score_summary_deadline_msec := 0
+var current_presentation_event_requires_async_ack := false
+var portrait_state_by_player: Array[String] = ["base", "base", "base", "base"]
+var portrait_state_deadline_msec: Array[int] = [0, 0, 0, 0]
 
 
 func _ready() -> void:
@@ -141,6 +197,9 @@ func _ready() -> void:
 	_refresh_announcement_label()
 	_refresh_table_motion_label()
 	_refresh_score_summary_label()
+	_render_players_summary([])
+	for player_index in range(player_portrait_labels.size()):
+		set_player_portrait_placeholder(player_index)
 	_render_dragon_recipient_options({})
 	_render_round_result({})
 	create_game_button.visible = false
@@ -244,10 +303,13 @@ func _on_socket_action_error(_request_id: int, action: String, error_payload: Di
 
 
 func _on_presentation_event_started(event: Dictionary) -> void:
+	current_presentation_event_requires_async_ack = false
 	var event_name := str(event.get("name", ""))
 	match event_name:
 		"announce_grand_tichu", "announce_small_tichu":
 			_apply_announcement_event(event)
+		"announce_game_finished":
+			_apply_game_finished_event(event)
 		"play_cards_to_table":
 			_apply_cards_played_event(event)
 		"collect_trick_cards":
@@ -256,6 +318,8 @@ func _on_presentation_event_started(event: Dictionary) -> void:
 			_apply_round_finished_event(event)
 		"highlight_current_turn":
 			_apply_turn_highlight_event(event)
+	if current_presentation_event_requires_async_ack:
+		return
 	presentation_bus.acknowledge_current()
 
 
@@ -761,24 +825,153 @@ func _render_round_result(round_result: Dictionary) -> void:
 
 
 func _render_players_summary(players: Array) -> void:
-	if players.is_empty():
-		players_summary_label.text = "Players: -"
-		return
-
-	var lines: Array[String] = []
+	var player_lookup := {}
 	var highlighted_player = _current_highlighted_turn_player()
 	for player_data in players:
 		if typeof(player_data) != TYPE_DICTIONARY:
-			lines.append(str(player_data))
 			continue
-		var player_index = int(player_data.get("player_index", -1))
-		var hand_count = int(player_data.get("hand_count", 0))
-		var status := "out" if player_data.get("is_out", false) else "active"
-		var grand := "grand" if player_data.get("declared_grand_tichu", false) else "no grand"
-		var small := "small" if player_data.get("declared_small_tichu", false) else "no small"
-		var turn_marker := " <TURN>" if highlighted_player != null and player_index == int(highlighted_player) else ""
-		lines.append("P%d%s | hand %d | %s | %s | %s" % [player_index, turn_marker, hand_count, status, grand, small])
-	players_summary_label.text = "Players:\n%s" % "\n".join(lines)
+		var player_index := int(player_data.get("player_index", -1))
+		if player_index < 0 or player_index >= player_panel_containers.size():
+			continue
+		player_lookup[player_index] = player_data
+
+	for player_index in range(player_panel_containers.size()):
+		var player_data: Dictionary = player_lookup.get(player_index, {})
+		var is_turn := highlighted_player != null and player_index == int(highlighted_player)
+		_render_player_panel(player_index, player_data, is_turn)
+
+
+func _render_player_panel(player_index: int, player_data: Dictionary, is_turn: bool) -> void:
+	var has_player_data := not player_data.is_empty()
+	player_name_labels[player_index].text = "Player %d" % player_index if has_player_data else "Player ?"
+	player_hand_labels[player_index].text = "Hand: %d" % int(player_data.get("hand_count", 0)) if has_player_data else "Hand: -"
+	player_status_labels[player_index].text = "Status: %s" % _player_status_text(player_data) if has_player_data else "Status: -"
+	player_badge_labels[player_index].text = "Badge: %s" % _player_badge_text(player_data) if has_player_data else "Badge: -"
+	player_turn_highlights[player_index].visible = is_turn
+	player_panel_containers[player_index].self_modulate = Color(1, 1, 1, 1) if has_player_data else Color(0.82, 0.82, 0.82, 1)
+	_refresh_player_portrait(player_index)
+
+
+func _player_status_text(player_data: Dictionary) -> String:
+	return "OUT" if player_data.get("is_out", false) else "ACTIVE"
+
+
+func _player_badge_text(player_data: Dictionary) -> String:
+	var badges: Array[String] = []
+	if player_data.get("declared_grand_tichu", false):
+		badges.append("GRAND")
+	if player_data.get("declared_small_tichu", false):
+		badges.append("SMALL")
+	return "-" if badges.is_empty() else ", ".join(badges)
+
+
+func set_player_portrait_placeholder(player_index: int) -> void:
+	if player_index < 0 or player_index >= player_portrait_labels.size():
+		return
+	reset_player_portrait_state(player_index)
+
+
+func set_player_portrait_state(player_index: int, state_name: String, duration_msec: int = 2600) -> void:
+	if player_index < 0 or player_index >= portrait_state_by_player.size():
+		return
+	portrait_state_by_player[player_index] = state_name
+	portrait_state_deadline_msec[player_index] = 0 if state_name == "base" else Time.get_ticks_msec() + duration_msec
+	_refresh_player_portrait(player_index)
+
+
+func reset_player_portrait_state(player_index: int) -> void:
+	if player_index < 0 or player_index >= portrait_state_by_player.size():
+		return
+	portrait_state_by_player[player_index] = "base"
+	portrait_state_deadline_msec[player_index] = 0
+	_refresh_player_portrait(player_index)
+
+
+func _refresh_player_portrait(player_index: int) -> void:
+	var state_name := portrait_state_by_player[player_index]
+	var state_title := _portrait_state_title(state_name)
+	player_portrait_labels[player_index].text = "P%d\n%s" % [player_index, state_title]
+	match state_name:
+		"declared":
+			player_portrait_slots[player_index].self_modulate = Color(1.0, 0.86, 0.55, 1)
+			player_portrait_labels[player_index].modulate = Color(0.33, 0.2, 0.0, 1)
+		"failed":
+			player_portrait_slots[player_index].self_modulate = Color(0.98, 0.62, 0.62, 1)
+			player_portrait_labels[player_index].modulate = Color(0.45, 0.05, 0.05, 1)
+		_:
+			player_portrait_slots[player_index].self_modulate = Color(0.82, 0.9, 1.0, 1)
+			player_portrait_labels[player_index].modulate = Color(0.1, 0.2, 0.35, 1)
+
+
+func _portrait_state_title(state_name: String) -> String:
+	match state_name:
+		"declared":
+			return "Declared"
+		"failed":
+			return "Failed"
+		_:
+			return "Base"
+
+
+func show_declaration_banner(player_index: int, declaration_type: String) -> void:
+	declaration_banner_title_label.text = declaration_type
+	declaration_banner_subtitle_label.text = "Player %d called %s" % [player_index, declaration_type]
+	set_player_portrait_state(player_index, "declared", 2600)
+	_show_announcement("%s | Player %d" % [declaration_type, player_index], 2600)
+
+
+func _apply_failed_tichu_portraits(tichu_outcomes: Array) -> void:
+	for outcome in tichu_outcomes:
+		if typeof(outcome) != TYPE_DICTIONARY:
+			continue
+		if bool(outcome.get("success", true)):
+			continue
+		var player_index := int(outcome.get("player_index", -1))
+		set_player_portrait_state(player_index, "failed", 3200)
+
+
+func show_round_result(round_index, totals: Array, deltas: Array) -> void:
+	result_overlay_title_label.text = "Round %s Result" % str(round_index)
+	result_overlay_body_label.text = "Team 0/2 %s (%s)\nTeam 1/3 %s (%s)" % [
+		str(_team_score_value(totals, 0)),
+		_signed_value_text(_team_score_value(deltas, 0)),
+		str(_team_score_value(totals, 1)),
+		_signed_value_text(_team_score_value(deltas, 1)),
+	]
+	_show_score_summary(
+		"Round %s | Team 0/2 %s (%s) | Team 1/3 %s (%s)" % [
+			str(round_index),
+			str(_team_score_value(totals, 0)),
+			_signed_value_text(_team_score_value(deltas, 0)),
+			str(_team_score_value(totals, 1)),
+			_signed_value_text(_team_score_value(deltas, 1)),
+		],
+		5200
+	)
+
+
+func show_game_result(team_scores: Array) -> void:
+	result_overlay_title_label.text = "Game Finished"
+	result_overlay_body_label.text = "Team 0/2 %s\nTeam 1/3 %s" % [
+		str(_team_score_value(team_scores, 0)),
+		str(_team_score_value(team_scores, 1)),
+	]
+	_show_score_summary(
+		"Final | Team 0/2 %s | Team 1/3 %s" % [
+			str(_team_score_value(team_scores, 0)),
+			str(_team_score_value(team_scores, 1)),
+		],
+		6200
+	)
+
+
+func show_table_cards_refresh() -> void:
+	var tween := create_tween()
+	table_container.modulate = Color(1, 1, 1, 0.72)
+	table_container.scale = Vector2(0.97, 0.97)
+	tween.tween_property(table_container, "modulate", Color(1, 1, 1, 1), 0.18)
+	tween.parallel().tween_property(table_container, "scale", Vector2(1.03, 1.03), 0.12)
+	tween.tween_property(table_container, "scale", Vector2(1, 1), 0.12)
 
 
 func _render_players_out_order(players_out_order: Array) -> void:
@@ -831,8 +1024,11 @@ func _expire_presentation_state() -> void:
 		_refresh_table_motion_label()
 	if score_summary_deadline_msec > 0 and now >= score_summary_deadline_msec:
 		score_summary_deadline_msec = 0
-		score_summary_text = ""
 		_refresh_score_summary_label()
+	for player_index in range(portrait_state_deadline_msec.size()):
+		if portrait_state_deadline_msec[player_index] > 0 and now >= portrait_state_deadline_msec[player_index]:
+			portrait_state_deadline_msec[player_index] = 0
+			reset_player_portrait_state(player_index)
 
 
 func _clear_presentation_overlays() -> void:
@@ -842,6 +1038,8 @@ func _clear_presentation_overlays() -> void:
 	announcement_deadline_msec = 0
 	table_motion_deadline_msec = 0
 	score_summary_deadline_msec = 0
+	for player_index in range(portrait_state_by_player.size()):
+		reset_player_portrait_state(player_index)
 	_refresh_announcement_label()
 	_refresh_table_motion_label()
 	_refresh_score_summary_label()
@@ -851,6 +1049,7 @@ func _show_announcement(text: String, duration_msec: int = 3000) -> void:
 	announcement_text = text
 	announcement_deadline_msec = Time.get_ticks_msec() + duration_msec
 	_refresh_announcement_label()
+	_queue_presentation_ack(duration_msec)
 
 
 func _show_table_motion(text: String, duration_msec: int = 2200) -> void:
@@ -863,10 +1062,15 @@ func _show_score_summary(text: String, duration_msec: int = 5000) -> void:
 	score_summary_text = text
 	score_summary_deadline_msec = Time.get_ticks_msec() + duration_msec
 	_refresh_score_summary_label()
+	_queue_presentation_ack(duration_msec)
 
 
 func _refresh_announcement_label() -> void:
 	announcement_label.text = "Announcement: -" if announcement_text.is_empty() else "Announcement: %s" % announcement_text
+	declaration_banner.visible = not announcement_text.is_empty()
+	if announcement_text.is_empty():
+		declaration_banner_title_label.text = "Declaration"
+		declaration_banner_subtitle_label.text = ""
 
 
 func _refresh_table_motion_label() -> void:
@@ -875,33 +1079,30 @@ func _refresh_table_motion_label() -> void:
 
 func _refresh_score_summary_label() -> void:
 	score_summary_label.text = "Round Score: -" if score_summary_text.is_empty() else "Round Score: %s" % score_summary_text
+	result_overlay.visible = score_summary_deadline_msec > 0
+	if score_summary_deadline_msec == 0:
+		result_overlay_title_label.text = "Round Result"
+		result_overlay_body_label.text = ""
 
 
 func _apply_announcement_event(event: Dictionary) -> void:
 	var payload: Dictionary = event.get("payload", {})
 	var player_index := int(payload.get("player_index", -1))
 	var source_effect_type := str(event.get("source_effect_type", ""))
-	var declared_text := "Grand Tichu" if source_effect_type == "grand_tichu_declared" else "Small Tichu"
 	if source_effect_type == "grand_tichu_declared" and not bool(payload.get("declare", false)):
-		declared_text = "No Grand Tichu"
-	_show_announcement("Player %d: %s" % [player_index, declared_text])
+		return
+	var declaration_type := "Grand Tichu" if source_effect_type == "grand_tichu_declared" else "Small Tichu"
+	show_declaration_banner(player_index, declaration_type)
 
 
 func _apply_cards_played_event(event: Dictionary) -> void:
-	var payload: Dictionary = event.get("payload", {})
-	var player_index := int(payload.get("player_index", -1))
-	var cards_text := _format_cards_inline(payload.get("cards", []))
-	_show_table_motion("Player %d -> Table: %s" % [player_index, cards_text])
+	show_table_cards_refresh()
+	_queue_presentation_ack(220)
 
 
 func _apply_trick_won_event(event: Dictionary) -> void:
-	var payload: Dictionary = event.get("payload", {})
-	var winner_index := int(payload.get("winner_index", -1))
-	var recipient_index = payload.get("recipient_index", null)
-	if recipient_index == null:
-		_show_table_motion("Player %d collects the trick" % winner_index)
-		return
-	_show_table_motion("Player %d gives dragon trick to Player %d" % [winner_index, int(recipient_index)])
+	show_table_cards_refresh()
+	_queue_presentation_ack(220)
 
 
 func _apply_round_finished_event(event: Dictionary) -> void:
@@ -909,15 +1110,13 @@ func _apply_round_finished_event(event: Dictionary) -> void:
 	var snapshot_context: Dictionary = event.get("snapshot_context", {})
 	var deltas: Array = payload.get("score_deltas", [])
 	var totals: Array = snapshot_context.get("team_scores", [])
-	_show_score_summary(
-		"Round %s | Team 0/2 %s (%s) | Team 1/3 %s (%s)" % [
-			str(snapshot_context.get("round_index", "-")),
-			str(_team_score_value(totals, 0)),
-			str(_team_score_value(deltas, 0)),
-			str(_team_score_value(totals, 1)),
-			str(_team_score_value(deltas, 1)),
-		]
-	)
+	_apply_failed_tichu_portraits(payload.get("tichu_outcomes", []))
+	show_round_result(snapshot_context.get("round_index", "-"), totals, deltas)
+
+
+func _apply_game_finished_event(event: Dictionary) -> void:
+	var payload: Dictionary = event.get("payload", {})
+	show_game_result(payload.get("team_scores", []))
 
 
 func _enqueue_presentation_events(snapshot: Dictionary) -> void:
@@ -983,6 +1182,25 @@ func _team_score_value(scores: Variant, index: int):
 	if index < 0 or index >= score_array.size():
 		return "-"
 	return score_array[index]
+
+
+func _signed_value_text(value) -> String:
+	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+		return ("%s%s" % ["+" if value >= 0 else "", str(value)])
+	return str(value)
+
+
+func _queue_presentation_ack(duration_msec: int) -> void:
+	current_presentation_event_requires_async_ack = true
+	var timer := get_tree().create_timer(max(float(duration_msec) / 1000.0, 0.05))
+	timer.timeout.connect(_acknowledge_presentation_event_once)
+
+
+func _acknowledge_presentation_event_once() -> void:
+	if not current_presentation_event_requires_async_ack:
+		return
+	current_presentation_event_requires_async_ack = false
+	presentation_bus.acknowledge_current()
 
 
 func _append_effects(effects: Array) -> void:

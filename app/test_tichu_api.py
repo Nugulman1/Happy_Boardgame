@@ -774,6 +774,7 @@ def test_round_finish_auto_next_round_flow() -> None:
     reset_sessions()
     game_id = _create_game()
     _set_round_finish_state(game_id)
+    _sessions[game_id].round_state.small_tichu_declarers = {0}
 
     play_open = client.post(
         f"/games/{game_id}/actions/play",
@@ -802,11 +803,20 @@ def test_round_finish_auto_next_round_flow() -> None:
     assert finish_payload["effects"][3] == {"type": "initial_cards_dealt", "count": 8}
     assert finish_payload["round_result"]["end_reason"] == "double_victory"
     assert finish_payload["round_result"]["players_out_order"] == [0, 2]
+    assert finish_payload["round_result"]["tichu_outcomes"] == [
+        {"player_index": 0, "declaration_type": "small", "success": True}
+    ]
+    assert finish_payload["effects"][1]["tichu_outcomes"] == [
+        {"player_index": 0, "declaration_type": "small", "success": True}
+    ]
     assert len(finish_payload["state"]["viewer_hand"]) == 8
 
     snapshot = _get_state(game_id, 0)
     assert snapshot["phase"] == "prepare_grand_tichu"
     assert snapshot["round_result"]["players_out_order"] == [0, 2]
+    assert snapshot["round_result"]["tichu_outcomes"] == [
+        {"player_index": 0, "declaration_type": "small", "success": True}
+    ]
     assert "can_start_next_round" not in snapshot["available_actions"]
     print("round finish/auto next round flow OK")
 
@@ -816,6 +826,7 @@ def test_auto_game_over() -> None:
     game_id = _create_game()
     session = _sessions[game_id]
     _set_round_finish_state(game_id)
+    session.round_state.grand_tichu_declarers = {1}
     session.state.team_scores = [1000, 0]
 
     response = client.post(
@@ -836,7 +847,13 @@ def test_auto_game_over() -> None:
     payload = response.json()
     assert payload["phase"] == "game_over"
     assert payload["effects"][-1]["type"] == "game_finished"
-    assert payload["round_result"]["score_deltas"] == [200, 0]
+    assert payload["round_result"]["score_deltas"] == [200, -200]
+    assert payload["round_result"]["tichu_outcomes"] == [
+        {"player_index": 1, "declaration_type": "grand", "success": False}
+    ]
+    assert payload["effects"][1]["tichu_outcomes"] == [
+        {"player_index": 1, "declaration_type": "grand", "success": False}
+    ]
     print("auto game over OK")
 
 
